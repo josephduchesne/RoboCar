@@ -1,7 +1,8 @@
 # RoboCar
 A robot car that uses the following:
 
-== Hardware ==
+Hardware
+--------
 - An [Arduino Nano](http://arduino.cc/en/Main/arduinoBoardNano) ($7)
 - 2x LM78M05CT 5V 0.5A Voltage Regulator ($1x2 = $2)
 - 2x [Pololu DRV8833](https://www.pololu.com/product/2130) Dual H-Bridge motor drivers ($4x2 = $8)
