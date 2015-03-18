@@ -18,6 +18,6 @@ Hardware
 - 2x S3003 Servo Motors ($5x2 = $10)
 - 1x $3 USB Webcam from the dollar store ($3) 
 - 1x HC-SR04 Ultrasonic Ragnefinder ($1, ebay)
-- 1x [Custom PCB](http://imall.iteadstudio.com/open-pcb/pcb-prototyping/im120418002.html): $22 (for 12, so arguably <$2/unit)
+- 1x [Custom PCB](http://imall.iteadstudio.com/open-pcb/pcb-prototyping/im120418002.html): ($22 for 12, so arguably <$2/unit)
 
-Total Cost: $182
+Total Cost: $162
