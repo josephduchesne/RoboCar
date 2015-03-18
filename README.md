@@ -19,5 +19,6 @@ Hardware
 - 1x $3 USB Webcam from the dollar store ($3) 
 - 1x HC-SR04 Ultrasonic Ragnefinder ($1, ebay)
 - 1x [Custom PCB](http://imall.iteadstudio.com/open-pcb/pcb-prototyping/im120418002.html): ($22 for 12, so arguably <$2/unit)
+- 1x [3D printed pan/tilt](https://github.com/josephduchesne/RoboCar/tree/master/3D_Prints/PanTilt) $1
 
-Total Cost: $162
+Total Cost: $163
