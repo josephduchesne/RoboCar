@@ -2,7 +2,7 @@
 A robot car that uses the following:
 
 -- Hardware --
-- An (Arduino Nano)[http://arduino.cc/en/Main/arduinoBoardNano]
+- An [Arduino Nano](http://arduino.cc/en/Main/arduinoBoardNano)
 - 2x LM78M05CT 5V 0.5A Voltage Regulator
 - 2x [Pololu DRV8833](https://www.pololu.com/product/2130) Dual H-Bridge motor drivers
 - [DFRobot ROB0025](http://www.dfrobot.com/wiki/index.php/NEW_A4WD_Mobile_Robot_with_encoder_%28SKU:ROB0025%29)
