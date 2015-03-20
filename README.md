@@ -1,4 +1,4 @@
 # RoboCar
 A robot car that uses the following:
 
-[[Hardware Costs]]
+[Hardware Costs](../../wiki/Bill-of-Materials)
