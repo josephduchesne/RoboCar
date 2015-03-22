@@ -17,29 +17,36 @@
 //'L-100\n' to 'L100\n' - left speed
 //'R-100\n' to 'R100\n' - right speed
 //'M0\n' or 'M1\n' - enable/disable motors (default 0)
-//'P0\n' to 'P180\n'  Pitch servo degree byte (0-180 typically)
-//'Y0\n' to 'Y180\n' Yaw servo degree (0-180 typically)
+//'P-10\n' to 'P100\n'  Pitch servo degree
+//'Y-90\n' to 'Y90\n' Yaw servo degree
 
 /* --- outgoing serial: --- */
-//'L' $lowByte $highByte (little endian int16 of the left wheel encoder ticks)
-//'R' $lowByte $highByte (little endian int16 of the right wheel encoder ticks)
-//'D' $lowByte $highByte (little endian int16 of the range finder)
-//'S' $byte $byte (unused sensor bits) 
+//'L-32000\n' to 'L32000\n' the left wheel encoder ticks
+//'R-32000\n' to 'R32000\n' the right wheel encoder ticks
+//'D0\n' to 'D32000\n' - Rangefinder distance in millimeters
+
+//todo: real time servo angle readout
 
 //pinout:
-int motorEnable = 13; // LED connected to digital pin 13
+static int motorEnable = 13; // LED connected to digital pin 13
 
 //if this goes low, one of the motor drivers is having a bad day
-int motorError = 2;
+static int motorError = 2;
 
 //used by the rotary encoders to know if we should increment/decrement
-int motorDirections[2] = {0, 0}; //stopped, +1 for forward, -1 for back
+static int motorDirections[2] = {0, 0}; //stopped, +1 for forward, -1 for back
 
-//camera servos: yaw, pitch
-int cameraServos[2] = {10,11};
+//camera servos: pitch, yaw
+static int servoPins[2] = {11,10};
+//for pitch, yaw what are the min/max valid values
+static int servoRanges[2][2] = {{-10,100}, {-45,45}}; 
+//for pitch, yaw what are the microsecond timings for those degrees
+static int servoTimings[2][2] = {{710,1920}, {1000,2000}}; 
+//servo objects for writing
+Servo servos[2];
 
 //wheelEncoders: back left, back right
-int wheelEncoders[2] = {A4,A5};
+static int wheelEncoders[2] = {A4,A5};
 boolean wheelEncoderValues[2] = {false, false}; //logic levels for wheel encoders
 int wheelEncoderCounters[2] = {0,0};  //number of counts for wheel encoders
 
@@ -54,6 +61,11 @@ static int timeBetweenOutputs = 2000; //ms, 2 seconds
 //Front left, back left, back right, front right {forward, reverse}
 int motors[4][2] = {{3,4},{5,6},{7,8},{9,12}};
 
+/**
+ * Setup function configures all pins, inits libs, resets values
+ *
+ * @return void
+ */
 void setup()
 {
   //disable motor drivers
@@ -73,20 +85,29 @@ void setup()
     pinMode(wheelEncoders[i], INPUT);
   }
   
-  
+  //attach the servo objects and
+  for (i=0;i<2;i++) {
+    servos[i].attach(servoPins[i]);
+  }
+  //move the servos to their home positions (0 degrees horizontal and vertical0
+  setServo('P', 0);
+  setServo('Y', 0);
   
   //Enable serial communication
   Serial.begin(SERIAL_BAUD); 
   //serial timeout on readBytesUntil()
   Serial.setTimeout(SERIAL_WAIT); //ms
+  
+  Serial.println("Started up");
 }
 
+/**
+ * Main loop. Checks sensors and outputs readings.
+ * 
+ * @return void
+ */
 void loop()
 {
-
-
-
-
   readRotaryEncoders();
   
   outputSensorData();
@@ -128,7 +149,44 @@ void setMotors(char side, int speed) {
   }
 }
 
+/**
+ * Set the servos ('P' or 'Y') to an angle
+ *
+ * @param char dir   The side 'P' for pitch up/down, 'Y' for yaw side to side
+ * @param int  angle The angle in degrees
+ *
+ * @return void
+ */
+void setServo(char servo, int angle) {
+  int offset = 0; //pitch defaults to offset 0
+  if (servo=='Y') {  //yaw is offset 1
+    offset = 1; 
+  }
+  
+  Serial.print("#Setting servo ");
+  Serial.print(servo);
+  Serial.print(" to ");
+  
+  //clamp servo angle between the configured min/max
+  angle = constrain(angle, servoRanges[offset][0], servoRanges[offset][1]);
+  
+  Serial.print(angle);
+  Serial.print(" degrees: ");
+  
+  angle = map(angle,  servoRanges[offset][0], servoRanges[offset][1], servoTimings[offset][0],  servoTimings[offset][1]);
 
+  Serial.print(angle);
+  Serial.println("us");
+  
+  servos[offset].writeMicroseconds(angle);
+}
+
+/**
+ * Pseudo-interrupt for new serial data availability
+ * Read user input, parse it, and pass that data to the appropriate functions.
+ *
+ * @return void
+ */
 void serialEvent(){
   char buff[16] = {0};
   char *data = buff+1;  //pointer offset by 1 to the buffer for the data segment of the command
@@ -137,7 +195,7 @@ void serialEvent(){
   //read a command line inputs
   Serial.readBytesUntil('\n', buff, 16);
   switch (buff[0]) {
-    case 'M':
+    case 'M': //motor enable
       if (data[0]=='1') {
         Serial.println("#Motor command run: High");
         digitalWrite(motorEnable, HIGH);
@@ -146,11 +204,17 @@ void serialEvent(){
         digitalWrite(motorEnable, LOW);
       }
       break;
-    case 'L':
+    case 'L': //left motor
       //intentional fallthrough to 'R'
-    case 'R':
+    case 'R': //right motor
       intData = String(data).toInt();
       setMotors(buff[0], intData);
+      break;
+    case 'P': //pitch
+      //intentional fallthrough to Yaw
+    case 'Y': //yaw
+      intData = String(data).toInt();
+      setServo(buff[0], intData);
       break;
     default:
       if (buff[0]!='\0') {
@@ -161,14 +225,17 @@ void serialEvent(){
   }
 }
 
+/**
+ * Read rotary encoder values to try to estimate distance traveled
+ *
+ * @return void
+ */
 void readRotaryEncoders() {
   //output sensor value every timeBetweenOutputs
   if (millis()-lastEncoderRead < timeBetweenEncoderReads) {
     return; 
   } 
   lastEncoderRead = millis();
-  
-  //Serial.println("Reading");
   
   //iterate left and right encoders
   for (int i=0; i<2; i++) {
@@ -180,7 +247,11 @@ void readRotaryEncoders() {
   }
 }
 
-
+/**
+ * Output sensor data periodically via serial port
+ *
+ * @return void
+ */
 void outputSensorData(){
   //output sensor value every timeBetweenOutputs
   if (millis()-lastOutput < timeBetweenOutputs) {
@@ -192,6 +263,5 @@ void outputSensorData(){
   Serial.println(wheelEncoderCounters[0]);
   Serial.print('R');
   Serial.println(wheelEncoderCounters[1]);
-  
 }
   
