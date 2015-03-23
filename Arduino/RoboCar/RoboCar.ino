@@ -1,22 +1,32 @@
 /**
  * Main program
- * Handles serial I/O using a basic gcode inspired ASCII interface
+ * Handles serial I/O using a simple g-code inspired ASCII interface
+ * Passes off specific motor, servo, and other sensor operations to other files.
  *
  * @author Joseph Duchesne
  */
 
 /* --- incoming serial:  --- */
-//then an any (but normally this) order:
-//'L-100\n' to 'L100\n' - left speed
-//'R-100\n' to 'R100\n' - right speed
-//'M0\n' or 'M1\n' - enable/disable motors (default 0)
-//'P-10\n' to 'P100\n'  Pitch servo degree
-//'Y-90\n' to 'Y90\n' Yaw servo degree
+/*
+ in an any (but normally this) order:
+ 'L-100\n' to 'L100\n' - left speed
+ 'R-100\n' to 'R100\n' - right speed
+ 'M0\n' or 'M1\n' - enable/disable motors (default 0)
+ 'P-10\n' to 'P100\n'  Pitch servo degree
+ 'Y-45\n' to '45\n' Yaw servo degree
+ '#some text' - debugging comments
+*/
 
 /* --- outgoing serial: --- */
-//'L-32000\n' to 'L32000\n' the left wheel encoder ticks
-//'R-32000\n' to 'R32000\n' the right wheel encoder ticks
-//'D0\n' to 'D32000\n' - Rangefinder distance in millimeters
+/*
+ in an any (but normally this) order:
+ 'L-32000\n' to 'L32000\n' the left wheel encoder ticks
+ 'R-32000\n' to 'R32000\n' the right wheel encoder ticks
+ 'P-10\n' to 'P100\n'  Pitch servo degree estimate @now
+ 'Y-45\n' to '45\n' Yaw servo degree estimate @now
+ 'D0\n' to 'D32000\n' - Rangefinder distance in millimeters
+ '#some text' - debugging comments
+*/
 
 //fastest serial available since
 //we're polling the wheel encoders
@@ -95,6 +105,9 @@ void serialEvent(){
     case 'Y': //yaw
       intData = String(data).toInt();
       setServo(buff[0], intData);
+      break;
+    case '#': //debug comments
+      //we can ignore them
       break;
     default:
       if (buff[0]!='\0') {
