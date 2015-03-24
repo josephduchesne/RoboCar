@@ -55,7 +55,7 @@ void setup()
   //serial timeout on readBytesUntil()
   Serial.setTimeout(SERIAL_WAIT); //ms
   
-  Serial.println("Started up");
+  Serial.println("#Started up");
 }
 
 /**
