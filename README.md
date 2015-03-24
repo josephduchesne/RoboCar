@@ -3,7 +3,7 @@ A robot car that uses the following:
 
 [Hardware Costs](../../wiki/Bill-of-Materials)
 
-### Third party Licenses:
+### Third Party Licenses:
 
  - 3D_Prints/PanTilt is third party, created by Javier Bernal Mayordomo, Miguel Manzano Olmos, and Arturo Serna León under a [Creative Commons - Attribution - Share Alike](http://creativecommons.org/licenses/by-sa/3.0/) license
  - ROS_Workspace/src/usb_cam is third party and by Robert Bosch LLC. under a [BSD licence](https://github.com/bosch-ros-pkg/usb_cam/blob/develop/LICENSE)
