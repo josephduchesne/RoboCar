@@ -1,0 +1,6 @@
+rate: 10 #float Hz
+ticks_meter: 100 #int, ~200mm circumference, 20 ticks/rev
+~base_width: 0.14747 #float meters
+~base_frame_id: "base"
+~odom_frame_id: "odometry"
+
