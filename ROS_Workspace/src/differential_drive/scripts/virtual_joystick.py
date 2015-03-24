@@ -20,7 +20,7 @@
 """
 import sys
 
-import roslib; roslib.load_manifest('differential_drive')
+import roslib; 
 import rospy
 from geometry_msgs.msg import Twist
 import inspect, os
