@@ -1,6 +1,3 @@
 [submodule "ROS_Workspace/src/usb_cam"]
 	path = ROS_Workspace/src/usb_cam
 	url = https://github.com/bosch-ros-pkg/usb_cam
-[submodule "ROS_Workspace/src/differential_drive"]
-	path = ROS_Workspace/src/differential_drive
-	url = https://code.google.com/p/differential-drive/
