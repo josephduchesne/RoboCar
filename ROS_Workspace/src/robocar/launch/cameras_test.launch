@@ -1,0 +1,13 @@
+<launch>
+
+  <group ns="cam_test">
+
+    <node pkg="usb_cam" name="cam" type="usb_cam_node"/>
+
+    <node pkg="image_view" type="image_view" name="image_view" >
+      <remap from="image" to="cam/image_raw" />
+    </node>
+
+  </group>
+
+</launch>
