@@ -6,7 +6,7 @@ import sys
 from std_msgs.msg import Int16
 from std_msgs.msg import Float32
 
-serial_port = serial.Serial('/dev/ttyUSB0', 115200, timeout=1.5, writeTimeout=0.1)
+serial_port = serial.Serial('/dev/ttyUSB0', 19200, timeout=0.01,  stopbits = 1)
 time.sleep(3) #nap while the arduino boots
 
 #publishers and subscribers
@@ -15,13 +15,17 @@ sub = {}
 
 #parse a single line of sensor data and publish it to a ROS topic
 def parseSensorData( line ):
+    if len(line) < 2:
+        return
     
+    print "Reading line outbuff: %d  inbuffer:%d" %  (serial_port.outWaiting(), serial_port.inWaiting()) 
+
     try:
         data = int(line[1:])
     except ValueError:
         data = None
 
-    print ":Command %s" % line
+    print ":Command %s" % line.strip()
     
     cmd = line[0]
     #at times like this, it seems odd to me that python doesn't have a native switch statement
@@ -51,6 +55,7 @@ def parseSensorData( line ):
 def set_motor_enable(value):
   print ":Motor enable: %d" % value
   serial_port.write("M%d\n" % int(value))
+  serial_port.flush()
   return
 def write_left_motor(msg):
   print ":Right PWM: %d" % int(msg.data)
@@ -63,7 +68,7 @@ def write_right_motor(msg):
 
 def serial_node():
     rospy.init_node('robocar_serial')
-    rate = rospy.Rate(1000) # 1khz. This should be plenty fast and not max out CPU usage for no reason
+    #rate = rospy.Rate(1000) # 1khz. This should be plenty fast and not max out CPU usage for no reason
 
     pub['left_encoder'] = rospy.Publisher('left_wheel/encoder', Int16, queue_size=10)
     pub['right_encoder'] = rospy.Publisher('right_wheel/encoder', Int16, queue_size=10)
@@ -76,22 +81,24 @@ def serial_node():
 
     set_motor_enable(1); #turn on motors
 
-    input_buffer = ''
+    #input_buffer = ''
 
     while not rospy.is_shutdown():
 
         #read all input into the buffer
-        new_data =  serial_port.read(serial_port.inWaiting()).strip('\x00');
+        #new_data =  serial_port.read(serial_port.inWaiting()).strip('\x00');
         #sys.stdout.write(new_data) #avoiding newlines or spaces here
-        input_buffer = input_buffer + new_data; 
+        #input_buffer = input_buffer + new_data; 
 
-        if '\r\n' in input_buffer:
-            lines = input_buffer.split('\n');
-            input_buffer = lines.pop() #the last element is a partial line or empty
-            lines = filter(None, map(str.strip, lines)) #get rid of whitespace, and empty entries
-            map(parseSensorData, lines)         
+        parseSensorData(serial_port.readline())
 
-        rate.sleep()
+        #if '\r\n' in input_buffer:
+        #    lines = input_buffer.split('\n');
+        #    input_buffer = lines.pop() #the last element is a partial line or empty
+        #    lines = filter(None, map(str.strip, lines)) #get rid of whitespace, and empty entries
+        #    map(parseSensorData, lines)         
+
+        #rate.sleep()
 
 if __name__ == '__main__':
     try:
