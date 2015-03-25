@@ -1,0 +1,71 @@
+<launch>
+
+  <group ns="robocar">
+    <rosparam param="ticks_meter">100</rosparam> <!-- int, ~200mm circumference, 20 ticks/rev -->
+
+    <node pkg="robocar" name="serial" type="robocar_serial_node.py" output="screen"></node>
+
+    <!-- differential transform, converts wheel encoders into odometry and a transform -->
+    <node pkg="differential_drive" type="diff_tf.py" name="differential_transform">
+      <rosparam param="rate">8.0</rosparam>
+      <rosparam param="base_width">0.14747</rosparam> <!-- float meters-->
+
+      <remap from="odom" to="base/odometry" /> 
+      <remap from="tf" to="base/transform" /> 
+
+      <remap from="lwheel" to="left_wheel/encoder" />
+      <remap from="rwheel" to="right_wheel/encoder" />
+    </node>
+
+    <!-- left wheel PID controller -->
+    <node pkg="differential_drive" type="pid_velocity.py" name="left_wheel_pid">
+      <remap from="motor_cmd" to="left_wheel/motor_pwm" />
+      <remap from="wheel_vel" to="left_wheel/velocity" />
+      
+      <remap from="wheel" to="left_wheel/encoder" />
+      <remap from="wheel_vtarget" to="left_wheel/target_velocity" />
+
+      <rosparam param="Kp">200</rosparam>
+      <rosparam param="Ki">200</rosparam>
+      <rosparam param="Kd">0</rosparam>
+
+      <rosparam param="out_min">-100</rosparam>
+      <rosparam param="out_max">100</rosparam>
+      <rosparam param="rate">10</rosparam>
+      <rosparam param="rolling_pts">3</rosparam>
+    </node>
+
+    <!-- right wheel PID controller -->
+    <node pkg="differential_drive" type="pid_velocity.py" name="right_wheel_pid">
+      <remap from="motor_cmd" to="right_wheel/motor_pwm" />
+      <remap from="wheel_vel" to="right_wheel/velocity" />
+      
+      <remap from="wheel" to="right_wheel/encoder" />
+      <remap from="wheel_vtarget" to="right_wheel/target_velocity" />
+
+      <rosparam param="Kp">200</rosparam>
+      <rosparam param="Ki">200</rosparam>
+      <rosparam param="Kd">0</rosparam>
+
+      <rosparam param="out_min">-100</rosparam>
+      <rosparam param="out_max">100</rosparam>
+      <rosparam param="rate">10</rosparam>
+      <rosparam param="rolling_pts">3</rosparam>
+    </node>
+
+    <node pkg="differential_drive" type="twist_to_motors.py" name="differential_twist_to_velocity">
+      <rosparam param="base_width">0.14747</rosparam>
+      <rosparam param="rate">30</rosparam>
+      
+      <remap from="lwheel_vtarget" to="left_wheel/target_velocity" />
+      <remap from="rwheel_vtarget" to="right_wheel/target_velocity" />
+      
+      <remap from="twist" to="differential/twist" />"
+    </node>
+
+    <node pkg="robocar" name="joyctl" type="joyctl.py">
+      <remap from="twist" to="differential/twist" />
+    </node>
+  </group>
+
+</launch>
