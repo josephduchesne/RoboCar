@@ -71,12 +71,13 @@ void setMotors(char side, int speed) {
     offset = 2; 
   }
   
+  Serial.println("#M");
+  /*
   Serial.print("#Motors driving: ");
   Serial.print(side);
   Serial.print(" side: ");
   Serial.print(speed);
-  Serial.println("speed");
-  
+  Serial.println("speed");*/
   
   if (speed>=0) { //forward
     SoftPWMSetPercent(motors[offset+0][0], speed);
