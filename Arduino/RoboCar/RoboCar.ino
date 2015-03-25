@@ -28,10 +28,8 @@
  '#some text' - debugging comments
 */
 
-//fastest serial available since
-//we're polling the wheel encoders
-//and can't wait around reading serial
-#define SERIAL_BAUD 115200
+//decently fast serial
+#define SERIAL_BAUD 19200
 //ms to wait for more serial data
 #define SERIAL_WAIT 2
 
@@ -78,12 +76,12 @@ void loop()
  * @return void
  */
 void serialEvent(){
-  char buff[16] = {0};
+  char buff[32] = {0};
   char *data = buff+1;  //pointer offset by 1 to the buffer for the data segment of the command
   int intData;
   
   //read a command line inputs
-  Serial.readBytesUntil('\n', buff, 16);
+  Serial.readBytesUntil('\n', buff, 32);
   switch (buff[0]) {
     case 'M': //motor enable
       if (data[0]=='1') {
