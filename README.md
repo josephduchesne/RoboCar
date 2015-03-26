@@ -1,7 +1,10 @@
 # RoboCar
+
 A robot car that uses the following:
 
-[Hardware Costs](../../wiki/Bill-of-Materials)
+[Hardware](../../wiki/Bill-of-Materials)
+
+Note: When cloning use `git clone --recursive git@github.com:josephduchesne/RoboCar.git` to also checkout the usb_cam submodule.
 
 ### Third Party Licenses:
 
