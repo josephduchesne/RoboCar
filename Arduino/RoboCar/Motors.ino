@@ -19,7 +19,7 @@ static int motorError = 2;
 static int motorDirections[2] = {0, 0}; //stopped, +1 for forward, -1 for back
 
 //wheelEncoders: back left, back right
-static int wheelEncoders[2] = {A4,A5};
+static int wheelEncoders[2] = {A2,A3};
 boolean wheelEncoderValues[2] = {false, false}; //logic levels for wheel encoders
 long int wheelEncoderCounters[2] = {0,0};  //number of counts for wheel encoders
 

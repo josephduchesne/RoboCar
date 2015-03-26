@@ -29,13 +29,13 @@
 */
 
 //decently fast serial
-#define SERIAL_BAUD 19200
+#define SERIAL_BAUD 115200
 //ms to wait for more serial data
 #define SERIAL_WAIT 2
 
 //variables for controlling sensor data frequency
 unsigned long lastOutput = 0;  //miliseconds since arduino start
-static int timeBetweenOutputs = 200; //ms between outputting data
+static int timeBetweenOutputs = 50; //ms between outputting data
 
 /**
  * Setup function configures all pins, inits libs, resets values
@@ -47,6 +47,8 @@ void setup()
   motor_setup();
   
   servo_setup();
+  
+  rangefinder_setup();
   
   //Enable serial communication
   Serial.begin(SERIAL_BAUD); 
@@ -140,5 +142,9 @@ void outputSensorData(){
   Serial.println(getWheelCounter(0));
   Serial.print('R');
   Serial.println(getWheelCounter(1));
+  
+  //output rangefinder distance data
+  Serial.print('D');
+  Serial.println(getRange());
 }
 

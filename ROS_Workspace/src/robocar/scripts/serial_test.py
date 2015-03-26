@@ -3,7 +3,7 @@ import serial
 import time #a project manager's dream
 import sys
 
-serial_port = serial.Serial('/dev/ttyUSB0', 19200, timeout=0.01,  stopbits = 1, writeTimeout=1)
+serial_port = serial.Serial('COM5', 19200, timeout=0.01,  stopbits = 1, writeTimeout=1)
 time.sleep(3) #nap while the arduino boots
 
 #parse a single line of sensor data and publish it to a ROS topic
