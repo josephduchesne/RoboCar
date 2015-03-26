@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 
-import rospy, pygame, sys
+import rospy, pygame, sys, os
 
 from geometry_msgs.msg import Twist 
+
+#prevent anything from trying to use X11
+os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 pygame.init();
 pygame.joystick.init();
