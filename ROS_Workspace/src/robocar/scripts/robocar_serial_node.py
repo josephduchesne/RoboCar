@@ -18,14 +18,14 @@ def parseSensorData( line ):
     if len(line) < 2:
         return
     
-    print "Reading line outbuff: %d  inbuffer:%d" %  (serial_port.outWaiting(), serial_port.inWaiting()) 
+    #print "Reading line outbuff: %d  inbuffer:%d" %  (serial_port.outWaiting(), serial_port.inWaiting()) 
 
     try:
         data = int(line[1:])
     except ValueError:
         data = None
 
-    print ":Command %s" % line.strip()
+    #print ":Command %s" % line.strip()
     
     cmd = line[0]
     #at times like this, it seems odd to me that python doesn't have a native switch statement

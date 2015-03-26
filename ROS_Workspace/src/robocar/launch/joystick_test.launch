@@ -1,0 +1,11 @@
+<launch>
+
+  <machine name="controller" address="Joseph-ROS" default="never" env-loader="/root/RoboCar/ROS_Workspace/scripts/controller_environment.sh" />
+
+  <group ns="robocar">
+    <node machine="controller" pkg="robocar" name="joyctl" type="joyctl.py">
+      <remap from="twist" to="differential/twist" />
+    </node>
+  </group>
+
+</launch>
