@@ -1,0 +1,17 @@
+<launch>
+  <machine name="pi" address="PI" default="true" />
+  <machine name="controller" address="Joseph-ROS" default="never" env-loader="/root/RoboCar/ROS_Workspace/scripts/controller_environment.sh" />
+
+  <group ns="cam_test">
+
+    <node pkg="usb_cam" name="cam" type="usb_cam_node">
+      <rosparam param="framerate">5</framerate>
+    </node>
+
+    <node machine="controller" pkg="image_view" type="image_view" name="image_view" >
+      <remap from="image" to="cam/image_raw" />
+    </node>
+
+  </group>
+
+</launch>
