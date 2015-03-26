@@ -4,13 +4,21 @@
 
   <group ns="cam_test">
 
-    <node pkg="usb_cam" name="cam" type="usb_cam_node">
-      <rosparam param="framerate">5</framerate>
+    <node pkg="usb_cam" name="cam" type="usb_cam_node" output="screen">
+      <rosparam param="framerate">15</rosparam>
+      <rosparam param="image_width">176</rosparam> 
+      <rosparam param="image_height">144</rosparam> 
+      <rosparam param="pixel_format">yuyv</rosparam>
+      <rosparam param="focus">0</rosparam>
     </node>
 
     <node machine="controller" pkg="image_view" type="image_view" name="image_view" >
       <remap from="image" to="cam/image_raw" />
     </node>
+    <node machine="controller" pkg="image_view" type="image_view" name="image_view2" >
+      <remap from="image" to="cam/image_raw" />
+    </node>
+
 
   </group>
 

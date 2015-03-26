@@ -6,7 +6,7 @@ import sys
 from std_msgs.msg import Int16
 from std_msgs.msg import Float32
 
-serial_port = serial.Serial('/dev/ttyUSB0', 19200, timeout=0.01,  stopbits = 1)
+serial_port = serial.Serial('/dev/ttyUSB0', 115200, timeout=0.02,  stopbits = 1)
 time.sleep(3) #nap while the arduino boots
 
 #publishers and subscribers
@@ -25,7 +25,7 @@ def parseSensorData( line ):
     except ValueError:
         data = None
 
-    #print ":Command %s" % line.strip()
+    print ":Command '%s'" % line.strip()
     
     cmd = line[0]
     #at times like this, it seems odd to me that python doesn't have a native switch statement
@@ -41,6 +41,8 @@ def parseSensorData( line ):
     elif cmd == 'Y': #yaw
         #rospy.loginfo("Yaw: %d" % data)
         pub['yaw_angle'].publish(data)
+    elif cmd == 'D': #depth/range
+        pub['range'].publish(float(data)/100) #convert from cm to m
     elif cmd == '#': #comment
         #rospy.loginfo("Comment: " % line)
         pass
@@ -74,6 +76,7 @@ def serial_node():
     pub['right_encoder'] = rospy.Publisher('right_wheel/encoder', Int16, queue_size=10)
     pub['pitch_angle'] = rospy.Publisher('sensors/pitch_angle', Int16, queue_size=10)
     pub['yaw_angle'] = rospy.Publisher('sensors/yaw_angle', Int16, queue_size=10)
+    pub['range'] = rospy.Publisher('sensors/range', Float32, queue_size=10)
 
 
     sub['left_pwm'] = rospy.Subscriber('left_wheel/motor_pwm', Float32, write_left_motor)
