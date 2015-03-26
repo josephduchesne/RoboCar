@@ -1,9 +1,9 @@
 <launch>
 
-  <env name="ROS_MASTER_URI" value="http://$(env ROS_MASTER_URI):11311"/>
+  <env name="ROS_MASTER_URI" value="$(env ROS_MASTER_URI)"/>
 
   <machine name="controller" address="Joseph-ROS" default="never" env-loader="/root/RoboCar/ROS_Workspace/scripts/controller_environment.sh" />
-    <node machine="controller" pkg="robocar" name="joyctl" type="joyctl.py">
+    <node machine="controller" pkg="robocar" name="joyctl" type="joyctl.py" output="screen">
       <remap from="twist" to="differential/twist" />
     </node>
 
