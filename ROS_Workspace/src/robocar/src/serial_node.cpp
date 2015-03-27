@@ -30,7 +30,7 @@ void parseSensorData( std::string line ){
         {
           std_msgs::Float32 msg;
           msg.data = (float)value/100.0f; //convert from cm to m
-          ROS_INFO("Distance: %fm", msg.data);
+          //ROS_INFO("Distance: %fm", msg.data);
           pub["range"].publish(msg);
           break;
         }
