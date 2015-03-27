@@ -24,39 +24,42 @@
     </node>
 
     <!-- left wheel PID controller -->
-    <node pkg="differential_drive" type="pid_velocity.py" name="left_wheel_pid">
+    <node pkg="differential_drive" type="pid_velocity" name="left_wheel_pid">
       <remap from="motor_cmd" to="left_wheel/motor_pwm" />
       <remap from="wheel_vel" to="left_wheel/velocity" />
       
       <remap from="wheel" to="left_wheel/encoder" />
       <remap from="wheel_vtarget" to="left_wheel/target_velocity" />
 
-      <rosparam param="Kp">200</rosparam>
-      <rosparam param="Ki">200</rosparam>
-      <rosparam param="Kd">0</rosparam>
+      <rosparam param="Kp">90</rosparam>
+      <rosparam param="Ki">90</rosparam>
+      <rosparam param="Kd">22</rosparam>
 
       <rosparam param="out_min">-100</rosparam>
       <rosparam param="out_max">100</rosparam>
-      <rosparam param="rate">20</rosparam>
-      <rosparam param="rolling_pts">3</rosparam>
+      <rosparam param="rate">10</rosparam>
+      <rosparam param="rolling_pts">5</rosparam>
+      <rosparam param="timeout_ticks">2</rosparam>
+
     </node>
 
     <!-- right wheel PID controller -->
-    <node pkg="differential_drive" type="pid_velocity.py" name="right_wheel_pid">
+    <node pkg="differential_drive" type="pid_velocity" name="right_wheel_pid">
       <remap from="motor_cmd" to="right_wheel/motor_pwm" />
       <remap from="wheel_vel" to="right_wheel/velocity" />
       
       <remap from="wheel" to="right_wheel/encoder" />
       <remap from="wheel_vtarget" to="right_wheel/target_velocity" />
 
-      <rosparam param="Kp">200</rosparam>
-      <rosparam param="Ki">200</rosparam>
-      <rosparam param="Kd">0</rosparam>
+      <rosparam param="Kp">90</rosparam>
+      <rosparam param="Ki">90</rosparam>
+      <rosparam param="Kd">22</rosparam>
 
       <rosparam param="out_min">-100</rosparam>
       <rosparam param="out_max">100</rosparam>
-      <rosparam param="rate">20</rosparam>
-      <rosparam param="rolling_pts">3</rosparam>
+      <rosparam param="rate">10</rosparam>
+      <rosparam param="rolling_pts">5</rosparam>
+      <rosparam param="timeout_ticks">2</rosparam>
     </node>
 
     <node pkg="differential_drive" type="twist_to_motors.py" name="differential_twist_to_velocity">

@@ -131,12 +131,12 @@ int main(int argc, char **argv)
   ros::NodeHandle node_handle;
   ros::AsyncSpinner spinner(1); //1 thread for async ROS spinning
 
-  //queue size of 101
-  pub["left_encoder"] = node_handle.advertise<std_msgs::Int16>("left_wheel/encoder", 10);
-  pub["right_encoder"] = node_handle.advertise<std_msgs::Int16>("right_wheel/encoder", 10);
-  pub["pitch_angle"] = node_handle.advertise<std_msgs::Int16>("sensors/pitch_estimate", 10);
-  pub["yaw_angle"] = node_handle.advertise<std_msgs::Int16>("sensors/yaw_estimate", 10);
-  pub["range"] = node_handle.advertise<std_msgs::Float32>("sensors/range", 10);
+  //queue size of 1
+  pub["left_encoder"] = node_handle.advertise<std_msgs::Int16>("left_wheel/encoder", 1);
+  pub["right_encoder"] = node_handle.advertise<std_msgs::Int16>("right_wheel/encoder", 1);
+  pub["pitch_angle"] = node_handle.advertise<std_msgs::Int16>("sensors/pitch_estimate", 1);
+  pub["yaw_angle"] = node_handle.advertise<std_msgs::Int16>("sensors/yaw_estimate", 1);
+  pub["range"] = node_handle.advertise<std_msgs::Float32>("sensors/range", 1);
   
   sub["left_pwm"] = node_handle.subscribe("left_wheel/motor_pwm", 1, write_left_motor);
   sub["right_pwm"] = node_handle.subscribe("right_wheel/motor_pwm", 1, write_right_motor); //right?

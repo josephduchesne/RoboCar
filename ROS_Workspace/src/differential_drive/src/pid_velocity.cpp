@@ -99,13 +99,13 @@ public:
       wheel_latest = (double)(enc + wheel_mult * (encoder_max - encoder_min)) / (double)ticks_per_meter;
       prev_encoder = enc;
         
-      ROS_INFO("Got wheel callback data:%d wheel_latest: %lf (%d div by %d) mult: %d", message.data, wheel_latest, enc + wheel_mult*(encoder_max-encoder_min), ticks_per_meter, wheel_mult);
+      //ROS_INFO("Got wheel callback data:%d wheel_latest: %lf (%d div by %d) mult: %d", message.data, wheel_latest, enc + wheel_mult*(encoder_max-encoder_min), ticks_per_meter, wheel_mult);
     }
 
     void targetCallback(std_msgs::Float32 message) {
       target = message.data;
       ticks_since_target = 0;
-      ROS_INFO("Got target callback %f", message.data);
+      //ROS_INFO("Got target callback %f", message.data);
     }
 
     PidVelocity(int argc, char **argv) {
@@ -143,7 +143,7 @@ public:
       wheel_latest = 0;
       then = ros::Time::now();
       prev_pid_time= ros::Time::now();
-      ROS_INFO("got Kp:%0.3f Ki:%0.3f Kd:%0.3f tpm:%d wrap: %d,%d", Kp, Ki, Kd, ticks_per_meter, encoder_low_wrap, encoder_high_wrap);
+      //ROS_INFO("got Kp:%0.3f Ki:%0.3f Kd:%0.3f tpm:%d wrap: %d,%d", Kp, Ki, Kd, ticks_per_meter, encoder_low_wrap, encoder_high_wrap);
 
       //subscribers/publishers
       sub["wheel"] = node_handle.subscribe("wheel", 1, &PidVelocity::wheelCallback, this);
@@ -159,7 +159,7 @@ public:
         
         error = target - vel;
         integral = integral + (error * pid_dt);
-        // ROS_INFO("i = i + (e * dt):  %0.3f = %0.3f + (%0.3f * %0.3f)", integral, integral, error, pid_dt);
+        // //ROS_INFO("i = i + (e * dt):  %0.3f = %0.3f + (%0.3f * %0.3f)", integral, integral, error, pid_dt);
         derivative = (error - previous_error) / pid_dt;
         previous_error = error;
     
@@ -178,7 +178,7 @@ public:
             motor = 0;
         }
     
-        ROS_INFO("vel:%0.2f tar:%0.2f err:%0.2f int:%0.2f der:%0.2f ## motor:%0.2f ", vel, target, error, integral, derivative, motor);
+        //ROS_INFO("vel:%0.2f tar:%0.2f err:%0.2f int:%0.2f der:%0.2f ## motor:%0.2f ", vel, target, error, integral, derivative, motor);
     } 
 
     void appendVel(double new_vel) {
@@ -193,22 +193,22 @@ public:
       ros::Duration dt_duration = ros::Time::now() - then;
       double dt = dt_duration.toSec();
       double cur_vel;
-      ROS_INFO("caclVelocity dt=%0.3lf wheel_latest=%f wheel_prev=%f" , dt, wheel_latest, wheel_prev);
+      //ROS_INFO("caclVelocity dt=%0.3lf wheel_latest=%f wheel_prev=%f" , dt, wheel_latest, wheel_prev);
 
       //we haven't recieved an updated wheel lately
       if (wheel_latest == wheel_prev) {
         //estimate speed using time since last update
         cur_vel = 1.0/(double)ticks_per_meter / dt;
         if (abs(cur_vel) < vel_threshold) { //too slow, consider velocity 0
-          ROS_INFO("Too slow current_vel: %lf, vel = 0", cur_vel);
+          //ROS_INFO("Too slow current_vel: %lf, vel = 0", cur_vel);
           appendVel(0);
           calcRollingVel();
         } else {  //we're going a decent speed
-          ROS_INFO("Fast enough current_vel: %lf", cur_vel);
+          //ROS_INFO("Fast enough current_vel: %lf", cur_vel);
 
           //if we're between vel and 0 (on the + or - side of 0)
           if ( (vel>=0 && vel>cur_vel && cur_vel>=0) || (vel<0 && vel<cur_vel && cur_vel<=0 )) {
-            ROS_INFO("Slowing down %lf", cur_vel); 
+            //ROS_INFO("Slowing down %lf", cur_vel); 
             appendVel(cur_vel);
             calcRollingVel();
           }
@@ -218,7 +218,7 @@ public:
         cur_vel = (wheel_latest - wheel_prev) / dt;
         appendVel(cur_vel);
         calcRollingVel();
-        ROS_INFO("wheel updated vel=%f", vel);
+        //ROS_INFO("wheel updated vel=%f", vel);
         wheel_prev = wheel_latest;
         then = ros::Time::now();
       }
@@ -266,7 +266,7 @@ public:
 
       while (ros::ok()) {
         spinOnce(r);
-        ROS_INFO("SPINNING");
+        //ROS_INFO("SPINNING");
         r.sleep();
       }
     }

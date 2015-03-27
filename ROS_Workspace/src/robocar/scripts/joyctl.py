@@ -16,7 +16,7 @@ joystick.init();
 def mover():
   pubUrl = 'twist'
   rospy.init_node('joyctl')
-  pub = rospy.Publisher(pubUrl, Twist, queue_size=10)
+  pub = rospy.Publisher(pubUrl, Twist, queue_size=1)
   rate = rospy.Rate(30) # 1hz
 
   rospy.loginfo("joyctl start")

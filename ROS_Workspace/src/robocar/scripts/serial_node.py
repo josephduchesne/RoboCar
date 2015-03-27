@@ -73,7 +73,7 @@ def write_right_motor(msg):
 
 def write_camera_pitch(msg):
   #print ":Left PWM: %d" % int(msg.data)
-  serial_port.write("Y%d\n" % msg.data)
+  serial_port.write("P%d\n" % msg.data)
   return
 def write_camera_yaw(msg):
   #print ":Left PWM: %d" % int(msg.data)
@@ -84,11 +84,11 @@ def serial_node():
     rospy.init_node('robocar_serial')
     rate = rospy.Rate(20) # 20Hz. This should be plenty fast and not max out CPU usage for no reason
 
-    pub['left_encoder'] = rospy.Publisher('left_wheel/encoder', Int16, queue_size=10)
-    pub['right_encoder'] = rospy.Publisher('right_wheel/encoder', Int16, queue_size=10)
-    pub['pitch_angle'] = rospy.Publisher('sensors/pitch_estimate', Int16, queue_size=10)
-    pub['yaw_angle'] = rospy.Publisher('sensors/yaw_estimate', Int16, queue_size=10)
-    pub['range'] = rospy.Publisher('sensors/range', Float32, queue_size=10)
+    pub['left_encoder'] = rospy.Publisher('left_wheel/encoder', Int16, queue_size=1)
+    pub['right_encoder'] = rospy.Publisher('right_wheel/encoder', Int16, queue_size=1)
+    pub['pitch_angle'] = rospy.Publisher('sensors/pitch_estimate', Int16, queue_size=1)
+    pub['yaw_angle'] = rospy.Publisher('sensors/yaw_estimate', Int16, queue_size=1)
+    pub['range'] = rospy.Publisher('sensors/range', Float32, queue_size=1)
 
     sub['left_pwm'] = rospy.Subscriber('left_wheel/motor_pwm', Float32, write_left_motor)
     sub['right_pwm'] = rospy.Subscriber('right_wheel/motor_pwm', Float32, write_right_motor)
