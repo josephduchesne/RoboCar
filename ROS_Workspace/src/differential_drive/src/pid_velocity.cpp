@@ -35,17 +35,17 @@
 class MovingAverage {
 
 private:
-    boost::circular_buffer<float> *q;
+    boost::circular_buffer<double> *q;
     double sum;
 public:
     MovingAverage(int n)  {
         sum=0;
-        q = new boost::circular_buffer<float>(n);
+        q = new boost::circular_buffer<double>(n);
     }
     ~MovingAverage() {
         delete q;
     }
-    void push(float v) {
+    void push(double v) {
         if (q->size() == q->capacity()) {
             double t=(double)q->front();
             sum-=t;
@@ -67,19 +67,21 @@ public:
  */
 class PidVelocity {
 private:
-    float target, motor, vel, integral, error, derivative, previous_error;
-    float vel_threshold;
-    int prev_encoder, wheel_prev, wheel_latest, wheel_mult;
+    double target, motor, vel, integral, error, derivative, previous_error;
+    double vel_threshold;
+    int prev_encoder, wheel_mult;
+    double wheel_prev, wheel_latest;
     ros::Time then;
     ros::Time prev_pid_time;
     
-    float Kp, Ki, Kd;
-    int out_min, out_max, rate, ticks_per_meter, timeout_ticks, rolling_pts, ticks_meter;
+    double Kp, Ki, Kd;
+    int out_min, out_max, rate, ticks_per_meter, timeout_ticks, rolling_pts;
     int  encoder_min, encoder_max, encoder_low_wrap, encoder_high_wrap, ticks_since_target;
     MovingAverage *prev_vel;  //empty one for now
 
     std::tr1::unordered_map<std::string, ros::Publisher> pub;
     std::tr1::unordered_map<std::string, ros::Subscriber> sub;
+    ros::AsyncSpinner *spinner;
 
 public:
 
@@ -94,10 +96,10 @@ public:
       }
            
          
-      wheel_latest = (float)(enc + wheel_mult * (encoder_max - encoder_min)) / ticks_per_meter;
+      wheel_latest = (double)(enc + wheel_mult * (encoder_max - encoder_min)) / (double)ticks_per_meter;
       prev_encoder = enc;
         
-      ROS_INFO("Got wheel callback data:%d wheel_latest: %d mult: %d", message.data, wheel_latest, wheel_mult);
+      ROS_INFO("Got wheel callback data:%d wheel_latest: %lf (%d div by %d) mult: %d", message.data, wheel_latest, enc + wheel_mult*(encoder_max-encoder_min), ticks_per_meter, wheel_mult);
     }
 
     void targetCallback(std_msgs::Float32 message) {
@@ -109,6 +111,8 @@ public:
     PidVelocity(int argc, char **argv) {
       ros::init(argc, argv, "pid_velocity");
       ros::NodeHandle node_handle;
+      spinner = new ros::AsyncSpinner(1);
+
       ROS_INFO("Started");
  
       //init paramaters
@@ -116,18 +120,18 @@ public:
       wheel_prev = wheel_latest = wheel_mult = 0;
       prev_encoder = 0;
 
-      ros::param::param<float>("~Kp", Kp, 10.0f);
-      ros::param::param<float>("~Ki", Ki, 10.0f);
-      ros::param::param<float>("~Kd", Kd, 0.001f);
+      ros::param::param<double>("~Kp", Kp, 10.0f);
+      ros::param::param<double>("~Ki", Ki, 10.0f);
+      ros::param::param<double>("~Kd", Kd, 0.001f);
 
       ros::param::param<int>("~out_min", out_min, -255);
       ros::param::param<int>("~out_max", out_max, 255);
       ros::param::param<int>("~rate", rate, 30);
       ros::param::param<int>("~rolling_pts", rolling_pts, 2);
       ros::param::param<int>("~timeout_ticks", timeout_ticks, 4);
-      ros::param::param<int>("ticks_meter", ticks_meter, 20);
+      ros::param::param<int>("ticks_meter", ticks_per_meter, 20);
 
-      ros::param::param<float>("~vel_threshold", vel_threshold, 0.001f);
+      ros::param::param<double>("~vel_threshold", vel_threshold, 0.001f);
 
       ros::param::param<int>("encoder_min", encoder_min, -32768);
       ros::param::param<int>("encoder_max", encoder_max, 32768);
@@ -142,15 +146,15 @@ public:
       ROS_INFO("got Kp:%0.3f Ki:%0.3f Kd:%0.3f tpm:%d wrap: %d,%d", Kp, Ki, Kd, ticks_per_meter, encoder_low_wrap, encoder_high_wrap);
 
       //subscribers/publishers
-      sub["wheel"] = node_handle.subscribe("wheel", 10, &PidVelocity::wheelCallback, this);
-      sub["vtarget"] = node_handle.subscribe("wheel_vtarget", 10, &PidVelocity::targetCallback, this);
-      pub["motor"] = node_handle.advertise<std_msgs::Float32>("motor_cmd", 10);
-      pub["vel"] = node_handle.advertise<std_msgs::Float32>("wheel_vel", 10);
+      sub["wheel"] = node_handle.subscribe("wheel", 1, &PidVelocity::wheelCallback, this);
+      sub["vtarget"] = node_handle.subscribe("wheel_vtarget", 1, &PidVelocity::targetCallback, this);
+      pub["motor"] = node_handle.advertise<std_msgs::Float32>("motor_cmd", 1);
+      pub["vel"] = node_handle.advertise<std_msgs::Float32>("wheel_vel", 1);
     }
 
     void doPid() {
         ros::Duration pid_dt_duration = ros::Time::now() - prev_pid_time;
-        float pid_dt = pid_dt_duration.toSec();
+        double pid_dt = pid_dt_duration.toSec();
         prev_pid_time = ros::Time::now();
         
         error = target - vel;
@@ -178,7 +182,7 @@ public:
     } 
 
     void appendVel(double new_vel) {
-      prev_vel->push((float)new_vel);
+      prev_vel->push((double)new_vel);
     }
 
     void calcRollingVel() {
@@ -189,7 +193,7 @@ public:
       ros::Duration dt_duration = ros::Time::now() - then;
       double dt = dt_duration.toSec();
       double cur_vel;
-      ROS_INFO("caclVelocity dt=%0.3lf wheel_latest=%d wheel_prev=%d" , dt, wheel_latest, wheel_prev);
+      ROS_INFO("caclVelocity dt=%0.3lf wheel_latest=%f wheel_prev=%f" , dt, wheel_latest, wheel_prev);
 
       //we haven't recieved an updated wheel lately
       if (wheel_latest == wheel_prev) {
@@ -202,7 +206,8 @@ public:
         } else {  //we're going a decent speed
           ROS_INFO("Fast enough current_vel: %lf", cur_vel);
 
-          if (abs(cur_vel) < vel) {  //we're mo longer going vel
+          //if we're between vel and 0 (on the + or - side of 0)
+          if ( (vel>=0 && vel>cur_vel && cur_vel>=0) || (vel<0 && vel<cur_vel && cur_vel<=0 )) {
             ROS_INFO("Slowing down %lf", cur_vel); 
             appendVel(cur_vel);
             calcRollingVel();
@@ -241,7 +246,6 @@ public:
         msg.data = motor;
         pub["motor"].publish(msg);
 
-        ros::spinOnce(); //run any callbacks that are waiting in the wings
         r.sleep();
 
         ticks_since_target += 1;
@@ -258,8 +262,9 @@ public:
       ticks_since_target = timeout_ticks;
       wheel_prev = wheel_latest;
 
+      spinner->start(); //start the multithreaded spinner
+
       while (ros::ok()) {
-	ros::spinOnce();
         spinOnce(r);
         ROS_INFO("SPINNING");
         r.sleep();
