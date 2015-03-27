@@ -35,7 +35,7 @@
 
 //variables for controlling sensor data frequency
 unsigned long lastOutput = 0;  //miliseconds since arduino start
-const int timeBetweenOutputs = 100; //ms between outputting data
+const int timeBetweenOutputs = 10; //ms between outputting data
 
 static int range = 0;
 
@@ -70,9 +70,9 @@ void loop()
 {
   readRotaryEncoders(); //for motor data
   
-  outputSensorData();
-  
   range = getRange();
+  
+  outputSensorData();
 }
 
 
@@ -134,6 +134,7 @@ void outputSensorData(){
   if (millis()-lastOutput < timeBetweenOutputs) {
     return;
   }
+  lastOutput = millis();
   
   
   //output estimated servo positions
@@ -150,10 +151,8 @@ void outputSensorData(){
   
   //output rangefinder distance data
   
-  
   Serial.print('D');
   Serial.println(range);
-  
-  lastOutput = millis();
+
 }
 

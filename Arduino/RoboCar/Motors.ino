@@ -102,6 +102,8 @@ void setMotors(char side, int speed) {
  * @return void
  */
 void setMotorEnable(boolean value) {
+  wheelEncoderCounters[1] = wheelEncoderCounters[0] = 0;  //clear the encoder counters, we've restarted
+   
   digitalWrite(motorEnable, value); 
 }
 
