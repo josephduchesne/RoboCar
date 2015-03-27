@@ -29,7 +29,7 @@
 */
 
 //decently fast serial
-#define SERIAL_BAUD 19200
+#define SERIAL_BAUD 115200
 //ms to wait for more serial data
 #define SERIAL_WAIT 2
 
@@ -134,7 +134,7 @@ void outputSensorData(){
   if (millis()-lastOutput < timeBetweenOutputs) {
     return;
   }
-  lastOutput = millis();
+  
   
   //output estimated servo positions
   Serial.print('P');
@@ -153,5 +153,7 @@ void outputSensorData(){
   
   Serial.print('D');
   Serial.println(range);
+  
+  lastOutput = millis();
 }
 
