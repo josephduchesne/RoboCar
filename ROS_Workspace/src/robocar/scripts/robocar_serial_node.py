@@ -6,7 +6,7 @@ import sys
 from std_msgs.msg import Int16
 from std_msgs.msg import Float32
 
-serial_port = serial.Serial('/dev/ttyUSB0', 115200, timeout=0.02,  stopbits = 1)
+serial_port = serial.Serial('/dev/ttyUSB0', 19200, timeout=0.02,  stopbits = 1)
 time.sleep(3) #nap while the arduino boots
 
 #publishers and subscribers
@@ -20,12 +20,14 @@ def parseSensorData( line ):
     
     #print "Reading line outbuff: %d  inbuffer:%d" %  (serial_port.outWaiting(), serial_port.inWaiting()) 
 
+    line = line.strip();
+
     try:
         data = int(line[1:])
     except ValueError:
-        data = None
+        return #invalid data read :/
 
-    print ":Command '%s'" % line.strip()
+    #print ":Command '%s'" % line.strip()
     
     cmd = line[0]
     #at times like this, it seems odd to me that python doesn't have a native switch statement
@@ -42,7 +44,8 @@ def parseSensorData( line ):
         #rospy.loginfo("Yaw: %d" % data)
         pub['yaw_angle'].publish(data)
     elif cmd == 'D': #depth/range
-        pub['range'].publish(float(data)/100) #convert from cm to m
+        #rospy.loginfo("Range: %d" % data)
+        pub['range'].publish(float(data)/100.0) #convert from cm to m
     elif cmd == '#': #comment
         #rospy.loginfo("Comment: " % line)
         pass
@@ -55,16 +58,16 @@ def parseSensorData( line ):
 #This could probably be more cleaver,
 #but it is unlikely to be more simple
 def set_motor_enable(value):
-  print ":Motor enable: %d" % value
+  #print ":Motor enable: %d" % value
   serial_port.write("M%d\n" % int(value))
   serial_port.flush()
   return
 def write_left_motor(msg):
-  print ":Right PWM: %d" % int(msg.data)
+  #print ":Right PWM: %d" % int(msg.data)
   serial_port.write("L%d\n" % int(msg.data))
   return
 def write_right_motor(msg):
-  print ":Left PWM: %d" % int(msg.data)
+  #print ":Left PWM: %d" % int(msg.data)
   serial_port.write("R%d\n" % int(msg.data))
   return
 
@@ -88,20 +91,7 @@ def serial_node():
 
     while not rospy.is_shutdown():
 
-        #read all input into the buffer
-        #new_data =  serial_port.read(serial_port.inWaiting()).strip('\x00');
-        #sys.stdout.write(new_data) #avoiding newlines or spaces here
-        #input_buffer = input_buffer + new_data; 
-
         parseSensorData(serial_port.readline())
-
-        #if '\r\n' in input_buffer:
-        #    lines = input_buffer.split('\n');
-        #    input_buffer = lines.pop() #the last element is a partial line or empty
-        #    lines = filter(None, map(str.strip, lines)) #get rid of whitespace, and empty entries
-        #    map(parseSensorData, lines)         
-
-        #rate.sleep()
 
 if __name__ == '__main__':
     try:
