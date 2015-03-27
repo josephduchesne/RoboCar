@@ -29,13 +29,15 @@
 */
 
 //decently fast serial
-#define SERIAL_BAUD 115200
+#define SERIAL_BAUD 19200
 //ms to wait for more serial data
 #define SERIAL_WAIT 2
 
 //variables for controlling sensor data frequency
 unsigned long lastOutput = 0;  //miliseconds since arduino start
-static int timeBetweenOutputs = 50; //ms between outputting data
+const int timeBetweenOutputs = 100; //ms between outputting data
+
+static int range = 0;
 
 /**
  * Setup function configures all pins, inits libs, resets values
@@ -63,11 +65,14 @@ void setup()
  * 
  * @return void
  */
+ 
 void loop()
 {
   readRotaryEncoders(); //for motor data
   
   outputSensorData();
+  
+  range = getRange();
 }
 
 
@@ -144,7 +149,9 @@ void outputSensorData(){
   Serial.println(getWheelCounter(1));
   
   //output rangefinder distance data
+  
+  
   Serial.print('D');
-  Serial.println(getRange());
+  Serial.println(range);
 }
 
