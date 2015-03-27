@@ -163,3 +163,8 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+include_directories(include ${catkin_INCLUDE_DIRS})
+
+add_executable(pid_velocity src/pid_velocity.cpp)
+target_link_libraries(pid_velocity ${catkin_LIBRARIES})
