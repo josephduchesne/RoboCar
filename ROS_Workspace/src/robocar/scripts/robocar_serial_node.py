@@ -6,7 +6,7 @@ import sys
 from std_msgs.msg import Int16
 from std_msgs.msg import Float32
 
-serial_port = serial.Serial('/dev/ttyUSB0', 19200, timeout=0.02,  stopbits = 1)
+serial_port = serial.Serial('/dev/ttyUSB0', 115200, timeout=None,  stopbits = 1)
 time.sleep(3) #nap while the arduino boots
 
 #publishers and subscribers
@@ -73,7 +73,7 @@ def write_right_motor(msg):
 
 def serial_node():
     rospy.init_node('robocar_serial')
-    #rate = rospy.Rate(1000) # 1khz. This should be plenty fast and not max out CPU usage for no reason
+    rate = rospy.Rate(20) # 20Hz. This should be plenty fast and not max out CPU usage for no reason
 
     pub['left_encoder'] = rospy.Publisher('left_wheel/encoder', Int16, queue_size=10)
     pub['right_encoder'] = rospy.Publisher('right_wheel/encoder', Int16, queue_size=10)
@@ -87,11 +87,12 @@ def serial_node():
 
     set_motor_enable(1); #turn on motors
 
-    #input_buffer = ''
-
     while not rospy.is_shutdown():
+	#print "In: %d out: %d" % (serial_port.inWaiting(), serial_port.outWaiting())
+        while serial_port.inWaiting():
+            parseSensorData(serial_port.readline())
+        rate.sleep()
 
-        parseSensorData(serial_port.readline())
 
 if __name__ == '__main__':
     try:

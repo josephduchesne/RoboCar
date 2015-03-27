@@ -37,7 +37,7 @@
 
       <rosparam param="out_min">-100</rosparam>
       <rosparam param="out_max">100</rosparam>
-      <rosparam param="rate">10</rosparam>
+      <rosparam param="rate">20</rosparam>
       <rosparam param="rolling_pts">3</rosparam>
     </node>
 
@@ -55,13 +55,13 @@
 
       <rosparam param="out_min">-100</rosparam>
       <rosparam param="out_max">100</rosparam>
-      <rosparam param="rate">10</rosparam>
+      <rosparam param="rate">20</rosparam>
       <rosparam param="rolling_pts">3</rosparam>
     </node>
 
     <node pkg="differential_drive" type="twist_to_motors.py" name="differential_twist_to_velocity">
       <rosparam param="base_width">0.14747</rosparam>
-      <rosparam param="rate">30</rosparam>
+      <rosparam param="rate">50</rosparam>
       
       <remap from="lwheel_vtarget" to="left_wheel/target_velocity" />
       <remap from="rwheel_vtarget" to="right_wheel/target_velocity" />
