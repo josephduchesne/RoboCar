@@ -258,6 +258,7 @@ public:
       wheel_prev = wheel_latest;
 
       while (ros::ok()) {
+	ros::spinOnce();
         spinOnce(r);
         ROS_INFO("SPINNING");
         r.sleep();

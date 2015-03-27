@@ -1,0 +1,28 @@
+<launch>
+
+  <group ns="robocar">
+    <rosparam param="ticks_meter">100</rosparam> <!-- int, ~200mm circumference, 20 ticks/rev -->
+
+    <node pkg="robocar" name="serial" type="serial_node" output="screen"></node>
+
+    <!-- left wheel PID controller -->
+    <node pkg="differential_drive" type="pid_velocity.py" name="left_wheel_pid">
+      <remap from="motor_cmd" to="left_wheel/motor_pwm" />
+      <remap from="wheel_vel" to="left_wheel/velocity" />
+      
+      <remap from="wheel" to="left_wheel/encoder" />
+      <remap from="wheel_vtarget" to="left_wheel/target_velocity" />
+
+      <rosparam param="Kp">200</rosparam>
+      <rosparam param="Ki">200</rosparam>
+      <rosparam param="Kd">0</rosparam>
+
+      <rosparam param="out_min">-100</rosparam>
+      <rosparam param="out_max">100</rosparam>
+      <rosparam param="rate">10</rosparam>
+      <rosparam param="rolling_pts">3</rosparam>
+    </node>
+
+  </group>
+
+</launch>
