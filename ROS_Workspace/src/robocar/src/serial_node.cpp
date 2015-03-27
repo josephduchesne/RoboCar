@@ -1,15 +1,18 @@
 #include "ros/ros.h"
+#include <sstream>
+#include <string>
+#include <iostream>
 #include "std_msgs/String.h"
 #include "std_msgs/Int16.h"
 #include "std_msgs/Float32.h"
 
 #include <boost/algorithm/string.hpp>
-#include <sstream>
 #include <tr1/unordered_map>
 #include <boost/asio.hpp>
 using namespace::boost::asio;  // save tons of typing
 
 std::tr1::unordered_map<std::string, ros::Publisher> pub;
+std::tr1::unordered_map<std::string, ros::Subscriber> sub;
 
 serial_port_base::baud_rate serial_baud(115200);
 io_service io;
@@ -91,31 +94,66 @@ void serial_read_handler(const boost::system::error_code& error,std::size_t byte
 
   //request the next line
   if (ros::ok()) {
-    ros::spinOnce();
     async_read_until(serial, serial_buffer, "\r\n", serial_read_handler); 
   } else {
     io.reset();
   }
 }
 
+void send_serial_message(char field, int value) {
+  //if we were using more than one spinner thread this would have to lock a mutex
+  char output[16];
+  sprintf(output, "%c%d\n", field, value);
+
+  //ROS_INFO("Writing serial: %s", output);
+  boost::asio::write(serial, boost::asio::buffer(output, strlen(output)));
+}
+
+void write_left_motor(std_msgs::Float32 message) {
+  send_serial_message('L', (int)message.data);
+}
+
+void write_right_motor(std_msgs::Float32 message) {
+  send_serial_message('R', (int)message.data);
+}
+
+void write_camera_pitch(std_msgs::Int16 message) {
+  send_serial_message('P', message.data);
+}
+
+void write_camera_yaw(std_msgs::Int16 message) {
+  send_serial_message('Y', message.data);
+}
+
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "serial_node");
-
   ros::NodeHandle node_handle;
+  ros::AsyncSpinner spinner(1); //1 thread for async ROS spinning
 
   //queue size of 101
   pub["left_encoder"] = node_handle.advertise<std_msgs::Int16>("left_wheel/encoder", 10);
   pub["right_encoder"] = node_handle.advertise<std_msgs::Int16>("right_wheel/encoder", 10);
-  pub["pitch_angle"] = node_handle.advertise<std_msgs::Int16>("sensors/pitch_angle", 10);
-  pub["yaw_angle"] = node_handle.advertise<std_msgs::Int16>("sensors/yaw_angle", 10);
+  pub["pitch_angle"] = node_handle.advertise<std_msgs::Int16>("sensors/pitch_estimate", 10);
+  pub["yaw_angle"] = node_handle.advertise<std_msgs::Int16>("sensors/yaw_estimate", 10);
   pub["range"] = node_handle.advertise<std_msgs::Float32>("sensors/range", 10);
+  
+  sub["left_pwm"] = node_handle.subscribe("left_wheel/motor_pwm", 1, write_left_motor);
+  sub["right_pwm"] = node_handle.subscribe("right_wheel/motor_pwm", 1, write_right_motor); //right?
+  sub["pitch"] = node_handle.subscribe("sensors/pitch", 1, write_camera_pitch); 
+  sub["yaw"] = node_handle.subscribe("sensors/yaw", 1, write_camera_yaw); 
 
   serial.set_option( serial_baud );
 
-  ros::Duration(3).sleep(); //wait 3sec for the serial port to init
+  ros::Duration(2).sleep(); //wait 3sec for the serial port to init
+
+  send_serial_message('M', 1); //enable the motors
+
+  ros::Duration(0.1).sleep(); //give motor enable a moment
 
   async_read_until(serial, serial_buffer, "\r\n", serial_read_handler);
+  
+  spinner.start();
   io.run();
 
   return 0;
