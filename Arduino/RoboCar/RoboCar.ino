@@ -35,7 +35,7 @@
 
 //variables for controlling sensor data frequency
 unsigned long lastOutput = 0;  //miliseconds since arduino start
-const int timeBetweenOutputs = 10; //ms between outputting data
+const int timeBetweenOutputs = 20; //ms between outputting data
 
 static int range = 0;
 
