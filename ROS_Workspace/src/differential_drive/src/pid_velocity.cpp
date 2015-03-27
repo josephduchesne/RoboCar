@@ -79,6 +79,7 @@ private:
     MovingAverage *prev_vel;  //empty one for now
 
     std::tr1::unordered_map<std::string, ros::Publisher> pub;
+    std::tr1::unordered_map<std::string, ros::Subscriber> sub;
 
 public:
 
@@ -141,8 +142,8 @@ public:
       ROS_INFO("got Kp:%0.3f Ki:%0.3f Kd:%0.3f tpm:%d wrap: %d,%d", Kp, Ki, Kd, ticks_per_meter, encoder_low_wrap, encoder_high_wrap);
 
       //subscribers/publishers
-      node_handle.subscribe("wheel", 10, &PidVelocity::wheelCallback, this);
-      node_handle.subscribe("wheel_vtarget", 10, &PidVelocity::targetCallback, this);
+      sub["wheel"] = node_handle.subscribe("wheel", 10, &PidVelocity::wheelCallback, this);
+      sub["vtarget"] = node_handle.subscribe("wheel_vtarget", 10, &PidVelocity::targetCallback, this);
       pub["motor"] = node_handle.advertise<std_msgs::Float32>("motor_cmd", 10);
       pub["vel"] = node_handle.advertise<std_msgs::Float32>("wheel_vel", 10);
     }
