@@ -13,7 +13,7 @@
 void rangefinder_setup() {
   I2c.begin(); // Opens & joins the irc bus as master
   delay(100); // Waits to make sure everything is powered up before sending or receiving data  
-  I2c.timeOut(50); // Sets a timeout to ensure no locking up of sketch if I2C communication fails
+  I2c.timeOut(5); // Sets a timeout to ensure no locking up of sketch if I2C communication fails
 }
 
 /**

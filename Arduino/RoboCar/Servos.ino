@@ -21,7 +21,7 @@ static int servoPins[2] = {11,10};
 static int servoRanges[2][2] = {{-10,100}, {-45,45}}; 
 //for pitch, yaw what are the microsecond timings for those degrees
 
-static int servoTimings[2][2] = {{710,1920}, {1000,2000}}; 
+static int servoTimings[2][2] = {{710,1920}, {950,1950}}; 
 
 //servo position estimation vars/consts
 int servoPositionsOld[2] = {0}; 

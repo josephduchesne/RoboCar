@@ -79,18 +79,24 @@ void setMotors(char side, int speed) {
   Serial.print(speed);
   Serial.println("speed");*/
   
-  if (speed>=0) { //forward
+  if (speed>0) { //forward
     SoftPWMSetPercent(motors[offset+0][0], speed);
     SoftPWMSetPercent(motors[offset+0][1], 0);
     SoftPWMSetPercent(motors[offset+1][0], speed);
     SoftPWMSetPercent(motors[offset+1][1], 0);
     motorDirections[offset/2] = 1;  
-  } else {  //reverse
+  } else if (speed <0) {  //reverse
     SoftPWMSetPercent(motors[offset+0][0], 0);
     SoftPWMSetPercent(motors[offset+0][1], -1*speed);
     SoftPWMSetPercent(motors[offset+1][0], 0);
     SoftPWMSetPercent(motors[offset+1][1], -1*speed);
     motorDirections[offset/2] = -1;
+  } else { //stop
+     //direction left alone
+     SoftPWMSetPercent(motors[offset+0][0], 0);
+     SoftPWMSetPercent(motors[offset+0][1], 0);
+     SoftPWMSetPercent(motors[offset+1][0], 0);
+     SoftPWMSetPercent(motors[offset+1][1], 0);
   }
 }
 
