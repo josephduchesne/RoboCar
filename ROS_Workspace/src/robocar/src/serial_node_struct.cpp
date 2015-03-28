@@ -5,6 +5,8 @@
 #include "std_msgs/String.h"
 #include "std_msgs/Int16.h"
 #include "std_msgs/Float32.h"
+#include "sensor_msgs/JointState.h"
+#include "sensor_msgs/LaserScan.h"
 #include <stdint.h>
 
 #include <boost/algorithm/string.hpp>
@@ -33,16 +35,30 @@ void parseSensorData( struct sensor_packet sensorPacket){
   std_msgs::Float32 range;
   std_msgs::Int16 left_encoder;
   std_msgs::Int16 right_encoder;
-  std_msgs::Int16 pitch_angle;
-  std_msgs::Int16 yaw_angle;
+  sensor_msgs::JointState joint_state;
+  sensor_msgs::LaserScan laser_scan;
 
   if(sensorPacket.end1 != 'E' && sensorPacket.end2 != 'D'){
     ROS_INFO("Invalid packet ending");
     return;
   }
 
-  range.data = (float)sensorPacket.rangefinder_distance/100.0f; //convert from cm to m
-  pub["range"].publish(range);
+  laser_scan.range_min = 0.1f; //http://kb.pulsedlight3d.com/support/solutions/articles/5000548616-lidar-lite-specifications
+  laser_scan.range_max = 40.0f;
+  laser_scan.angle_min = -0.001;
+  laser_scan.angle_max = 0.001;
+  laser_scan.angle_increment = 0.002;
+  laser_scan.scan_time = 0.0;
+  laser_scan.ranges.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
+  laser_scan.ranges.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
+  laser_scan.intensities.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
+  laser_scan.intensities.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
+  laser_scan.header.frame_id = "rangefinder";
+  laser_scan.header.stamp = ros::Time::now();
+  pub["laser"].publish(laser_scan);
+
+  //range.data = (float)sensorPacket.rangefinder_distance/100.0f; //convert from cm to m
+  //pub["range"].publish(range);
 
   left_encoder.data = sensorPacket.left_wheel_encoder;
   pub["left_encoder"].publish(left_encoder);
@@ -50,11 +66,13 @@ void parseSensorData( struct sensor_packet sensorPacket){
   right_encoder.data = sensorPacket.right_wheel_encoder;
   pub["right_encoder"].publish(right_encoder);
 
-  yaw_angle.data = sensorPacket.servo_yaw;
-  pub["yaw_angle"].publish(yaw_angle);
+  joint_state.name.push_back("servo_yaw");
+  joint_state.position.push_back((float)sensorPacket.servo_yaw/180.0f*3.141592f); //convert to radians
+  
+  joint_state.name.push_back("servo_pitch");
+  joint_state.position.push_back((float)sensorPacket.servo_pitch/180.0f*3.141592f); //convert to radians
 
-  pitch_angle.data = sensorPacket.servo_pitch;
-  pub["pitch_angle"].publish(pitch_angle);
+  pub["joint_state"].publish(joint_state);
 }
 
 
@@ -123,9 +141,8 @@ int main(int argc, char **argv)
   //queue size of 1
   pub["left_encoder"] = node_handle.advertise<std_msgs::Int16>("left_wheel/encoder", 1);
   pub["right_encoder"] = node_handle.advertise<std_msgs::Int16>("right_wheel/encoder", 1);
-  pub["pitch_angle"] = node_handle.advertise<std_msgs::Int16>("sensors/pitch_estimate", 1);
-  pub["yaw_angle"] = node_handle.advertise<std_msgs::Int16>("sensors/yaw_estimate", 1);
-  pub["range"] = node_handle.advertise<std_msgs::Float32>("sensors/range", 1);
+  pub["joint_state"] = node_handle.advertise<sensor_msgs::JointState>("base/joint_state", 1);
+  pub["laser"] = node_handle.advertise<sensor_msgs::LaserScan>("sensors/laser", 1);
   
   sub["left_pwm"] = node_handle.subscribe("left_wheel/motor_pwm", 1, write_left_motor);
   sub["right_pwm"] = node_handle.subscribe("right_wheel/motor_pwm", 1, write_right_motor); //right?
