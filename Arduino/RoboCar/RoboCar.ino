@@ -33,11 +33,31 @@
 //ms to wait for more serial data
 #define SERIAL_WAIT 2
 
+
 //variables for controlling sensor data frequency
 unsigned long lastOutput = 0;  //miliseconds since arduino start
 const int timeBetweenOutputs = 20; //ms between outputting data
 
 static int range = 0;
+
+// output mode
+//#define OUTPUT_ASCII
+#define OUTPUT_STRUCT
+
+#ifdef OUTPUT_STRUCT
+//note: these are 16 bit ints and should be int16 on PC
+struct sensor_packet {
+  int servo_pitch;
+  int servo_yaw;
+  int left_wheel_encoder;
+  int right_wheel_encoder;
+  int rangefinder_distance;
+  char end1;
+  char end2;
+} __attribute__((__packed__));
+
+struct sensor_packet sensorPacket;
+#endif
 
 /**
  * Setup function configures all pins, inits libs, resets values
@@ -57,7 +77,7 @@ void setup()
   //serial timeout on readBytesUntil()
   Serial.setTimeout(SERIAL_WAIT); //ms
   
-  Serial.println("#Started up");
+  //Serial.println("#Started up");
 }
 
 /**
@@ -92,10 +112,10 @@ void serialEvent(){
   switch (buff[0]) {
     case 'M': //motor enable
       if (data[0]=='1') {
-        Serial.println("#Motor command run: High");
+        //Serial.println("#Motor command run: High");
         setMotorEnable(HIGH);
       } else {
-        Serial.println("#Motor command run: Low");
+        //Serial.println("#Motor command run: Low");
         setMotorEnable(LOW);
       }
       break;
@@ -116,8 +136,8 @@ void serialEvent(){
       break;
     default:
       if (buff[0]!='\0') {
-        Serial.print("#Unknown command: ");
-        Serial.println(buff);
+        //Serial.print("#Unknown command: ");
+        //Serial.println(buff);
       }
       break;
   }
@@ -136,23 +156,35 @@ void outputSensorData(){
   }
   lastOutput = millis();
   
+  #ifdef OUTPUT_ASCII
+    //output estimated servo positions
+    Serial.print('P');
+    Serial.println(estimateServoPosition(0));
+    Serial.print('Y');
+    Serial.println(estimateServoPosition(1));
+    
+    //output wheel encoder data
+    Serial.print('L');
+    Serial.println(getWheelCounter(0));
+    Serial.print('R');
+    Serial.println(getWheelCounter(1));
+    
+    //output rangefinder distance data
+    
+    Serial.print('D');
+    Serial.println(range);
+  #endif
   
-  //output estimated servo positions
-  Serial.print('P');
-  Serial.println(estimateServoPosition(0));
-  Serial.print('Y');
-  Serial.println(estimateServoPosition(1));
+  #ifdef OUTPUT_STRUCT
+    sensorPacket.servo_pitch = estimateServoPosition(0);
+    sensorPacket.servo_yaw = estimateServoPosition(1);
+    sensorPacket.left_wheel_encoder = getWheelCounter(0);
+    sensorPacket.right_wheel_encoder = getWheelCounter(1);
+    sensorPacket.rangefinder_distance = range;
+    sensorPacket.end1 = 'E';
+    sensorPacket.end2 = 'D';
+    Serial.write((char *)&sensorPacket, sizeof(sensorPacket));
+  #endif
   
-  //output wheel encoder data
-  Serial.print('L');
-  Serial.println(getWheelCounter(0));
-  Serial.print('R');
-  Serial.println(getWheelCounter(1));
-  
-  //output rangefinder distance data
-  
-  Serial.print('D');
-  Serial.println(range);
-
 }
 
