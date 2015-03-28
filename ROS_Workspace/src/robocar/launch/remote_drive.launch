@@ -13,7 +13,7 @@
 
     <!-- differential transform, converts wheel encoders into odometry and a transform -->
     <node pkg="differential_drive" type="diff_tf.py" name="differential_transform">
-      <rosparam param="rate">8.0</rosparam>
+      <rosparam param="rate">30.0</rosparam>
       <rosparam param="base_width">0.14747</rosparam> <!-- float meters-->
 
       <remap from="odom" to="base/odometry" /> 
@@ -33,11 +33,11 @@
 
       <rosparam param="Kp">90</rosparam>
       <rosparam param="Ki">90</rosparam>
-      <rosparam param="Kd">22</rosparam>
+      <rosparam param="Kd">4</rosparam>
 
       <rosparam param="out_min">-100</rosparam>
       <rosparam param="out_max">100</rosparam>
-      <rosparam param="rate">10</rosparam>
+      <rosparam param="rate">20</rosparam>
       <rosparam param="rolling_pts">5</rosparam>
       <rosparam param="timeout_ticks">2</rosparam>
 
@@ -53,11 +53,11 @@
 
       <rosparam param="Kp">90</rosparam>
       <rosparam param="Ki">90</rosparam>
-      <rosparam param="Kd">22</rosparam>
+      <rosparam param="Kd">4</rosparam>
 
       <rosparam param="out_min">-100</rosparam>
       <rosparam param="out_max">100</rosparam>
-      <rosparam param="rate">10</rosparam>
+      <rosparam param="rate">20</rosparam>
       <rosparam param="rolling_pts">5</rosparam>
       <rosparam param="timeout_ticks">2</rosparam>
     </node>
