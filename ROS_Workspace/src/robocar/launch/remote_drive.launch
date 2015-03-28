@@ -72,7 +72,7 @@
       <remap from="twist" to="differential/twist" />"
     </node>
 
-    <node pkg="robocar" name="serial" type="serial_node" output="screen"></node>
+    <node pkg="robocar" name="serial" type="serial_node_struct" output="screen"></node>
   </group>
 
 </launch>

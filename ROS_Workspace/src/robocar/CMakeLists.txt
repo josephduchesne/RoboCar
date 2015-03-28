@@ -168,3 +168,5 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_executable(serial_node src/serial_node.cpp)
 target_link_libraries(serial_node ${catkin_LIBRARIES})
+add_executable(serial_node_struct src/serial_node_struct.cpp)
+target_link_libraries(serial_node_struct ${catkin_LIBRARIES})

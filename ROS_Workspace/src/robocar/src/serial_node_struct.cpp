@@ -19,62 +19,42 @@ serial_port_base::baud_rate serial_baud(115200);
 io_service io;
 serial_port serial(io, "/dev/ttyUSB0");
 
-void parseSensorData( std::string line ){
-    if (line.size() < 2) {
-        return;
-    }
-    //ROS_INFO("Got serial: %s", line.c_str());
+struct sensor_packet {
+  int16_t servo_pitch;
+  int16_t servo_yaw;
+  int16_t left_wheel_encoder;
+  int16_t right_wheel_encoder;
+  int16_t rangefinder_distance;
+  uint8_t end1;
+  uint8_t end2;
+} __attribute__((__packed__));
 
-    int value;
-    sscanf(line.c_str()+1, "%d", &value);
+void parseSensorData( struct sensor_packet sensorPacket){
+  std_msgs::Float32 range;
+  std_msgs::Int16 left_encoder;
+  std_msgs::Int16 right_encoder;
+  std_msgs::Int16 pitch_angle;
+  std_msgs::Int16 yaw_angle;
 
-    switch (line[0]) {
-      case 'D': //rangefinder
-        {
-          std_msgs::Float32 msg;
-          msg.data = (float)value/100.0f; //convert from cm to m
-          //ROS_INFO("Distance: %fm", msg.data);
-          pub["range"].publish(msg);
-          break;
-        }
-      case 'L': //left wheel encoder
-        {
-          std_msgs::Int16 msg;
-          msg.data = value;
-          pub["left_encoder"].publish(msg);
-          break;
-        }
-      case 'R': //right wheel encoder
-        {
-          std_msgs::Int16 msg;
-          msg.data = value;
-          pub["right_encoder"].publish(msg);
-          break;
-        }
-      case 'P': //left wheel encoder
-        {
-          std_msgs::Int16 msg;
-          msg.data = value;
-          pub["pitch_angle"].publish(msg);
-          break;
-        }
-      case 'Y': //right wheel encoder
-        {
-          std_msgs::Int16 msg;
-          msg.data = value;
-          pub["yaw_angle"].publish(msg);
-          break;
-        }
-      case '#': //comment
-        {
-          break;
-        }
-      default:
-        {
-          //ROS_INFO("Unknown command %s", line.c_str());
-          break;
-        }
-    }
+  if(sensorPacket.end1 != 'E' && sensorPacket.end2 != 'D'){
+    ROS_INFO("Invalid packet ending");
+    return;
+  }
+
+  range.data = (float)sensorPacket.rangefinder_distance/100.0f; //convert from cm to m
+  pub["range"].publish(range);
+
+  left_encoder.data = sensorPacket.left_wheel_encoder;
+  pub["left_encoder"].publish(left_encoder);
+
+  right_encoder.data = sensorPacket.right_wheel_encoder;
+  pub["right_encoder"].publish(right_encoder);
+
+  yaw_angle.data = sensorPacket.servo_yaw;
+  pub["yaw_angle"].publish(yaw_angle);
+
+  pitch_angle.data = sensorPacket.left_wheel_encoder;
+  pub["pitch_angle"].publish(pitch_angle);
 }
 
 
@@ -83,18 +63,27 @@ void serial_read_handler(const boost::system::error_code& error,std::size_t byte
   //ROS_INFO("Read handler");
 
   if (!error) {
-    std::istream is(&serial_buffer);
-    std::string line;
-    std::getline(is, line);
-    //ROS_INFO("Got serial: %s", line.c_str());
-    parseSensorData(line);
+    const char* serial_bytes = boost::asio::buffer_cast<const char*>(serial_buffer.data());
+    serial_buffer.consume(bytes_transferred);
+
+    //12 byte packet + null byte that Arduino seems to like tacking on
+    //also sanity checking for the packet ending
+    if (bytes_transferred == 12 || bytes_transferred == 13) { 
+      struct sensor_packet sensorPacket;
+      memcpy(&sensorPacket, serial_bytes, sizeof(sensorPacket));
+      parseSensorData(sensorPacket);
+      //ROS_INFO("Valid serial length %ld bytes", bytes_transferred);
+    } else {
+      ROS_INFO("Invalid serial: %ld bytes", bytes_transferred);
+    }
+
   }  else {
     ROS_INFO("Error!");
   }
 
   //request the next line
   if (ros::ok()) {
-    async_read_until(serial, serial_buffer, "\r\n", serial_read_handler); 
+    async_read_until(serial, serial_buffer, "ED", serial_read_handler); 
   } else {
     io.reset();
   }
@@ -151,7 +140,7 @@ int main(int argc, char **argv)
 
   ros::Duration(0.1).sleep(); //give motor enable a moment
 
-  async_read_until(serial, serial_buffer, "\r\n", serial_read_handler);
+  async_read_until(serial, serial_buffer, "ED", serial_read_handler);
   
   spinner.start();
   io.run();
