@@ -71,7 +71,7 @@ void setMotors(char side, int speed) {
     offset = 2; 
   }
   
-  Serial.println("#M");
+  //Serial.println("#M");
   /*
   Serial.print("#Motors driving: ");
   Serial.print(side);

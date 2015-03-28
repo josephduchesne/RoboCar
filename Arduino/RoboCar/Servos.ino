@@ -96,21 +96,21 @@ void setServo(char servo, int angle) {
     offset = SERVO_YAW; 
   }
   
-  Serial.print("#Setting servo ");
-  Serial.print(servo);
-  Serial.print(" to ");
+  //Serial.print("#Setting servo ");
+  //Serial.print(servo);
+  //Serial.print(" to ");
   
   //clamp servo angle between the configured min/max
   angle = constrain(angle, servoRanges[offset][0], servoRanges[offset][1]);
   
-  Serial.print(angle);
-  Serial.print(" degrees: ");
+  //Serial.print(angle);
+  //Serial.print(" degrees: ");
   
   //now calculate the timing 
   microseconds = map(angle,  servoRanges[offset][0], servoRanges[offset][1], servoTimings[offset][0],  servoTimings[offset][1]);
 
-  Serial.print(microseconds);
-  Serial.println("us");
+  //Serial.print(microseconds);
+  //Serial.println("us");
   
   servos[offset].writeMicroseconds(microseconds);
   
