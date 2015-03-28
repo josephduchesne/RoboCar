@@ -1,0 +1,189 @@
+<robot name="robocar">
+
+  <!-- The base platform -->
+  <link name="base_link">
+    <visual> <!-- Platform top -->
+      <origin xyz="0 0 0.079"/>
+      <geometry>
+        <box size="0.200 0.176 0.002"/>
+      </geometry>
+      <material name="grey"><color rgba="0.5 0.5 0.5 1"/></material>
+    </visual>
+
+    <visual> <!-- platform bottom -->
+      <origin xyz="0 0 0.017"/>
+      <geometry>
+        <box size="0.200 0.113 0.002"/>
+      </geometry>
+      <material name="dark"/>
+    </visual>
+    <visual><origin xyz="0.115 0 0.017"/><geometry><box size="0.03 0.18 0.002" /></geometry><material name="dark"/></visual>
+
+    <!-- Sides -->
+    <visual><origin xyz="-.066 0.056 0.048"/><geometry><box size="0.04 0.002 0.062" /></geometry><material name="dark"/></visual>
+    <visual><origin xyz=".066 0.056 0.048"/><geometry><box size="0.04 0.002 0.062" /></geometry><material name="dark"/></visual>
+    <visual><origin xyz="-.066 -0.056 0.048"/><geometry><box size="0.04 0.002 0.062" /></geometry><material name="dark"/></visual>
+    <visual><origin xyz=".066 -0.056 0.048"/><geometry><box size="0.04 0.002 0.062" /></geometry><material name="dark"/></visual>
+
+    <visual>
+      <origin xyz="0.08 -0.03 0.08" rpy="1.5708 0 1.5708"/>
+      <material name="blue"><color rgba="0.1 0.1 1 1"/></material>
+      <geometry>
+        <mesh scale="0.001 0.001 0.001" filename="package://robocar/../../../3D_Prints/PanTiltBase/BaseTop.STL"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <link name="sensor_arm">
+    <visual>
+      <origin xyz="-0.01085 0 0.023" />
+      <material name="black"><color rgba="0.1 0.1 0.1 1"/></material>
+      <geometry> 
+        <box size="0.04 0.021 0.037"/>
+      </geometry>
+    </visual>
+    <visual>
+      <material name="blue"><color rgba="0.1 0.1 1 1"/></material>
+      <origin xyz="-0.01085 0 0.04475" />
+      <geometry> 
+        <box size="0.04 0.021 0.0065"/>
+      </geometry>
+    </visual>
+    <visual>
+      <material name="black"/>
+      <origin xyz="-0.006 0.0039 0.0655" />
+      <geometry> 
+        <box size="0.02 0.042 0.043"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <link name="sensor_platform">
+    <visual>
+      <origin xyz="0.04 0 0" rpy="-1.5708 0 1.5708"/>
+      <material name="blue"><color rgba="0.1 0.1 1 1"/></material>
+      <geometry>
+        <mesh scale="0.001 0.001 0.001" filename="package://robocar/../../../3D_Prints/PanTilt/head_fixed.stl"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <link name="camera">
+    <visual>
+      <origin xyz="0.01 0 0" rpy="0 -1.5708 0"/>
+      <material name="black"/>
+      <geometry><cylinder length="0.02" radius="0.007"/></geometry>
+    </visual>
+  </link>
+
+  <link name="rangefinder">
+    <visual>
+      <origin xyz="0.019 0.0146 0" rpy="0 -1.5708 0"/>
+      <material name="black"/>
+      <geometry><cylinder length="0.038" radius="0.0095"/></geometry>
+    </visual>
+    <visual>
+      <origin xyz="0.019 -0.0146 0" rpy="0 -1.5708 0"/>
+      <material name="black"/>
+      <geometry><cylinder length="0.038" radius="0.0095"/></geometry>
+    </visual>
+    <visual>
+      <origin xyz="0.01 0 0"/>
+      <material name="black"/>
+      <geometry><box size="0.014 0.04822 0.02"/></geometry>
+    </visual>
+  </link>
+
+  <joint name="servo_yaw" type="revolute">
+    <parent link="base_link"/>
+    <child link="sensor_arm"/>
+    <axis xyz="0 0 1" />
+    <limit lower="-0.785" upper="0.785" effort="1" velocity="1" />
+    <origin xyz="0.0925 0 0.08"/> 
+  </joint>
+
+  <joint name="servo_pitch" type="revolute">
+    <axis xyz="0 -1 0"/>
+    <limit lower="-0.174" upper="1.745" effort="1" velocity="1"/>
+    <parent link="sensor_arm"/>
+    <child link="sensor_platform"/>
+    <origin xyz="-.006 0.0014 0.078"/> 
+  </joint>
+
+  <joint name="camera_offset" type="fixed">
+    <parent link="sensor_platform"/>
+    <child link="camera"/>
+    <origin xyz="0.04 0 0"/> 
+  </joint>
+
+  <joint name="rangefinder_offset" type="fixed">
+    <parent link="sensor_platform"/>
+    <child link="rangefinder"/>
+    <origin xyz="0.04 0 -0.038"/> 
+  </joint>
+
+  <!-- Wheels Back -->
+  <link name="wheel_back_left">
+    <visual>
+      <origin xyz="0 0 0" rpy="-1.5708 0 0"/>
+      <material name="black"><color rgba="0.1 0.1 0.1 1"/></material>
+      <geometry><cylinder length="0.018" radius="0.032"/></geometry>
+    </visual>
+  </link>
+
+  <joint name="wheel_back_left_joint" type="continuous">
+    <parent link="base_link"/>
+    <axis xyz="0 1 0"/>
+    <child link="wheel_back_left"/>
+    <origin xyz="-0.0665 0.0745 0.032"/>
+  </joint>
+
+  <link name="wheel_back_right">
+    <visual>
+      <origin xyz="0 0 0" rpy="-1.5708 0 0"/>
+      <material name="black"><color rgba="0.1 0.1 0.1 1"/></material>
+      <geometry><cylinder length="0.018" radius="0.032"/></geometry>
+    </visual>
+  </link>
+
+  <joint name="wheel_back_right_joint" type="continuous">
+    <parent link="base_link"/>
+    <axis xyz="0 1 0"/>
+    <child link="wheel_back_right"/>
+    <origin xyz="-0.0665 -0.0745 0.032"/>
+  </joint>
+
+  <!-- Wheels Front -->
+  <link name="wheel_front_left">
+    <visual>
+      <origin xyz="0 0 0" rpy="-1.5708 0 0"/>
+      <material name="black"><color rgba="0.1 0.1 0.1 1"/></material>
+      <geometry><cylinder length="0.018" radius="0.032"/></geometry>
+    </visual>
+  </link>
+
+  <joint name="wheel_front_left_joint" type="continuous">
+    <mimic joint="wheel_back_left_joint"/>"
+    <parent link="base_link"/>
+    <axis xyz="0 1 0"/>
+    <child link="wheel_front_left"/>
+    <origin xyz="0.0665 0.0745 0.032"/>
+  </joint>
+
+  <link name="wheel_front_right">
+    <visual>
+      <origin xyz="0 0 0" rpy="-1.5708 0 0"/>
+      <material name="black"><color rgba="0.1 0.1 0.1 1"/></material>
+      <geometry><cylinder length="0.018" radius="0.032"/></geometry>
+    </visual>
+  </link>
+
+  <joint name="wheel_front_right_joint" type="continuous">
+    <mimic joint="wheel_back_right_joint"/>"
+    <parent link="base_link"/>
+    <axis xyz="0 1 0"/>
+    <child link="wheel_front_right"/>
+    <origin xyz="0.0665 -0.0745 0.032"/>
+  </joint>
+
+</robot>
