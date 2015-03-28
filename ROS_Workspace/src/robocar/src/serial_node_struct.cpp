@@ -53,7 +53,7 @@ void parseSensorData( struct sensor_packet sensorPacket){
   yaw_angle.data = sensorPacket.servo_yaw;
   pub["yaw_angle"].publish(yaw_angle);
 
-  pitch_angle.data = sensorPacket.left_wheel_encoder;
+  pitch_angle.data = sensorPacket.servo_pitch;
   pub["pitch_angle"].publish(pitch_angle);
 }
 
