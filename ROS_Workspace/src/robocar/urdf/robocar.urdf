@@ -70,7 +70,7 @@
 
   <link name="camera">
     <visual>
-      <origin xyz="0.01 0 0" rpy="0 -1.5708 0"/>
+      <origin xyz="0 0 0.01" rpy="0 0 0"/>
       <material name="black"/>
       <geometry><cylinder length="0.02" radius="0.007"/></geometry>
     </visual>
@@ -113,7 +113,7 @@
   <joint name="camera_offset" type="fixed">
     <parent link="sensor_platform"/>
     <child link="camera"/>
-    <origin xyz="0.04 0 0"/> 
+    <origin xyz="0.04 0 0" rpy="-1.5708 0 -1.5708"/> 
   </joint>
 
   <joint name="rangefinder_offset" type="fixed">

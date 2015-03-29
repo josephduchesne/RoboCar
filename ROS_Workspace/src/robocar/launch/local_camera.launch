@@ -1,0 +1,11 @@
+<launch>
+
+  <node pkg="usb_cam" name="usb_cam" type="usb_cam_node" output="screen">
+    <param name="camera_info_url" value="package://robocar/config/camera.yaml" />
+    <param name="camera_frame_id" value="camera" />
+    <param name="camera_name" value="camera" />
+    <param name="image_width" value="640" />
+    <param name="image_height" value="480" />
+  </node>
+
+</launch>
