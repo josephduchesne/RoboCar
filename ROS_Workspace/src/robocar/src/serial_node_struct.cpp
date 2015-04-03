@@ -86,9 +86,9 @@ void serial_read_handler(const boost::system::error_code& error,std::size_t byte
     const char* serial_bytes = boost::asio::buffer_cast<const char*>(serial_buffer.data());
     serial_buffer.consume(bytes_transferred);
 
-    //12 byte packet + null byte that Arduino seems to like tacking on
+    //72 byte packet + null byte that Arduino seems to like tacking on
     //also sanity checking for the packet ending
-    if (bytes_transferred == 12 || bytes_transferred == 13) { 
+    if (bytes_transferred == 72 || bytes_transferred == 73) { 
       struct sensor_packet sensorPacket;
       memcpy(&sensorPacket, serial_bytes, sizeof(sensorPacket));
       parseSensorData(sensorPacket);
