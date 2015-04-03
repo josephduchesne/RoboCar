@@ -10,27 +10,27 @@
 #include <SoftPWM_timer.h>
 
 //pinout:
-static int motorEnable = 13; // LED connected to digital pin 13
+const int motorEnable = 13; // LED connected to digital pin 13
 
 //if this goes low, one of the motor drivers is having a bad day
-static int motorError = 2;
+const int motorError = 2;
 
 //used by the rotary encoders to know if we should increment/decrement
 static int motorDirections[2] = {0, 0}; //stopped, +1 for forward, -1 for back
 
 //wheelEncoders: back left, back right
-static int wheelEncoders[2] = {A2,A3};
+const int wheelEncoders[2] = {A2,A3};
 boolean wheelEncoderValues[2] = {false, false}; //logic levels for wheel encoders
 long int wheelEncoderCounters[2] = {0,0};  //number of counts for wheel encoders
 
 unsigned long lastEncoderRead = 0;  //miliseconds since arduino start
 //the motors can spin at about 1.3rev/sec. With 20 state changes/rev 
 //lets poll this at ~5x that which should incidentally debounce things
-static int timeBetweenEncoderReads = 8; //ms, 0.008s
+const int timeBetweenEncoderReads = 8; //ms, 0.008s
 
 
 //Front left, back left, back right, front right {forward, reverse}
-int motors[4][2] = {{3,4},{5,6},{7,8},{9,12}};
+const int motors[4][2] = {{3,4},{5,6},{7,8},{9,12}};
 
 /**
  * Init motor encoders and output

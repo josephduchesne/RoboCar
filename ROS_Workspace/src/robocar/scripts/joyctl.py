@@ -21,11 +21,14 @@ def mover():
   pub['twist'] = rospy.Publisher(pubUrl, Twist, queue_size=1)
   pub['pitch'] = rospy.Publisher('sensors/pitch', Int16, queue_size=1)
   pub['yaw'] = rospy.Publisher('sensors/yaw', Int16, queue_size=1)
-  rate = rospy.Rate(30) # 1hz
+  pub['mode'] = rospy.Publisher('sensors/mode', Int16, queue_size=1)
+  rate = rospy.Rate(20) # 1hz
 
   anglePerHz = 1;
   pitch = 0;
   yaw = 0;
+  mode = 1;
+  modeButton = False;
 
   rospy.loginfo("joyctl start")
 
@@ -39,6 +42,10 @@ def mover():
 
     buttons = joystick.get_numbuttons()
 
+    #for i in range(buttons):
+    #  if joystick.get_button(i):
+    #    print "Pressed: %d\n" % i;
+
     if joystick.get_button(10):
       pitch += anglePerHz
     if joystick.get_button(12):
@@ -51,6 +58,14 @@ def mover():
     pitch = numpy.clip(pitch, -10, 100);
 
     yaw = numpy.clip(yaw, -45, 45);
+
+    #toggle
+    if joystick.get_button(1) and not modeButton:
+      mode = 4-mode; #toggle between 1 and 3
+      pub['mode'].publish(mode);
+      modeButton = True;
+    if not joystick.get_button(1) and modeButton:
+      modeButton = False;
 
     pub['twist'].publish(twist)
     pub['pitch'].publish(pitch)

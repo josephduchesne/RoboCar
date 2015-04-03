@@ -21,12 +21,14 @@ serial_port *serial;
 serial_port_base::baud_rate serial_baud(115200);
 io_service io;
 
+#define SENSOR_READINGS 15
 struct sensor_packet {
   int16_t servo_pitch;
   int16_t servo_yaw;
   int16_t left_wheel_encoder;
   int16_t right_wheel_encoder;
   int16_t rangefinder_distance;
+  int16_t sweep[SENSOR_READINGS*2];
   uint8_t end1;
   uint8_t end2;
 } __attribute__((__packed__));
@@ -132,6 +134,10 @@ void write_camera_yaw(std_msgs::Int16 message) {
   send_serial_message('Y', message.data);
 }
 
+void write_mode(std_msgs::Int16 message) {
+  send_serial_message('M', message.data); //set mode
+}
+
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "serial_node");
@@ -153,6 +159,7 @@ int main(int argc, char **argv)
   sub["right_pwm"] = node_handle.subscribe("right_wheel/motor_pwm", 1, write_right_motor); //right?
   sub["pitch"] = node_handle.subscribe("sensors/pitch", 1, write_camera_pitch); 
   sub["yaw"] = node_handle.subscribe("sensors/yaw", 1, write_camera_yaw); 
+  sub["mode"] = node_handle.subscribe("sensors/mode", 1, write_mode); 
 
   serial->set_option( serial_baud );
 

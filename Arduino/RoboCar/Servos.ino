@@ -15,13 +15,23 @@
 #define NUMERATOR 0
 #define DENOMINATOR 1
 
+//sweep constants
+#define SWEEP_DEGREES_PER_MILLISECOND 0.285
+#define SWEEP_DEGREE_OFFSET 78.326
+#define SWEEP_PRE_BLANK 50000
+#define SWEEP_POST_BLANK 460000
+#define SWEEP_END 800000
+int sweep_stage = 0;
+short int sweep_direction = 1;  //invert angle sign for backwards sweep
+long int sweep_time = 0;
+
 //camera servos: pitch, yaw
-static int servoPins[2] = {11,10};
+const int servoPins[2] = {11,10};
 //for pitch, yaw what are the min/max valid values
-static int servoRanges[2][2] = {{-10,100}, {-45,45}}; 
+const int servoRanges[2][2] = {{-10,100}, {-65,65}}; 
 //for pitch, yaw what are the microsecond timings for those degrees
 
-static int servoTimings[2][2] = {{710,1920}, {950,1950}}; 
+const int servoTimings[2][2] = {{710,1920}, {858 ,2242}}; 
 
 //servo position estimation vars/consts
 int servoPositionsOld[2] = {0}; 
@@ -29,8 +39,8 @@ int servoPositions[2] = {0};
 int timeOfLastServoChange[2] = {0};
 //0.23 sec/60deg @4.8v as per sheed, estimated 0.224 sec/60deg @5v via linear approx.
 //for fast and accurate int math, I'm storing a fraction: 0: numerator, 1: denominator
-static long int servoDegreesPerMillisecond[2] = {60, 224};
-static int maxServoMoveTime = 700; //ms. At 0.224/60deg it would take 672ms to move 180deg.
+const long int servoDegreesPerMillisecond[2] = {60, 224};
+const int maxServoMoveTime = 700; //ms. At 0.224/60deg it would take 672ms to move 180deg.
 
 //servo objects for writing
 Servo servos[2];
@@ -96,26 +106,82 @@ void setServo(char servo, int angle) {
     offset = SERVO_YAW; 
   }
   
-  //Serial.print("#Setting servo ");
-  //Serial.print(servo);
-  //Serial.print(" to ");
-  
   //clamp servo angle between the configured min/max
   angle = constrain(angle, servoRanges[offset][0], servoRanges[offset][1]);
-  
-  //Serial.print(angle);
-  //Serial.print(" degrees: ");
   
   //now calculate the timing 
   microseconds = map(angle,  servoRanges[offset][0], servoRanges[offset][1], servoTimings[offset][0],  servoTimings[offset][1]);
 
-  //Serial.print(microseconds);
-  //Serial.println("us");
-  
   servos[offset].writeMicroseconds(microseconds);
   
   //update position estimation data
   servoPositionsOld[offset] = estimateServoPosition(offset); 
   servoPositions[offset] = angle; 
   timeOfLastServoChange[offset] = millis();
+}
+
+/**
+ * Record a sensor sweep reading to the circular buffer
+ *
+ * @return void
+ */
+void recordSensorSweepReading(){
+  int blocking_range = getRangeNow();
+  float milliseconds = (float)(micros() - sweep_time)/1000.0f;
+  float angle = milliseconds * SWEEP_DEGREES_PER_MILLISECOND + SWEEP_DEGREE_OFFSET; //This is why we learn y = mx + b
+   
+  //if we're traveling backwards, the degrees are backwards
+  angle = angle * sweep_direction; //this fixes that
+  
+  setSensorData(angle, blocking_range);  //record the sensor data in the circular output buffer
+}
+
+/**
+ * A state machine that:
+ * - 0: Start the servos moving into forward facing position
+ * - 1: First moves the servos into a forward facing position
+ * - 2: Then sweep left pre-blanking, after SWEEP_PRE_BLANK
+ * - 3: Then sweep left recording data, after SWEEP_POST_BLANK goto 2
+ * - 4: Then sweep left post-blanking, then flip direction, reset clock, and goto 1
+ *
+ * @return void
+ */
+void processSensorSweep(){
+  switch(sweep_stage){
+    case 0: //reset to start position from wherever, then get into case 1,2,3 loop
+      setServo('P', 0);  //pitch level with horizon
+      setServo('Y', servoRanges[SERVO_YAW][0]);  //move the low side
+      sweep_direction = -1;  //initially moving towards negative
+      sweep_time = micros();
+      sweep_stage = 1;
+      break;
+      
+    case 1: //wait for move to be done
+      if (micros() - sweep_time >= SWEEP_END) {  //give it the max time to arrive
+        sweep_time = micros();
+        sweep_direction *= -1; //reverse sweep direction
+        sweep_stage = 2;
+        setServo('Y', servoRanges[SERVO_YAW][(1+sweep_direction)/2]); //move to the other side
+      }
+      break;
+      
+    case 2: //skip the spin up
+      if (micros() - sweep_time >= SWEEP_PRE_BLANK) {
+          sweep_stage = 3;
+      }
+      break;
+      
+    case 3: //RECORD while moving at a constant angular velocity
+      recordSensorSweepReading();
+      if (micros() - sweep_time >= SWEEP_POST_BLANK) {
+          sweep_stage = 1;
+      }
+      break;
+  }
+}
+
+void endSensorSweep(){
+  sweep_stage = 0; 
+  setServo('P', 0);  //pitch level with horizon
+  setServo('Y', 0);  //pitch level with horizon
 }
