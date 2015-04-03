@@ -17,9 +17,9 @@ using namespace::boost::asio;  // save tons of typing
 std::tr1::unordered_map<std::string, ros::Publisher> pub;
 std::tr1::unordered_map<std::string, ros::Subscriber> sub;
 
+serial_port *serial;
 serial_port_base::baud_rate serial_baud(115200);
 io_service io;
-serial_port serial(io, "/dev/ttyUSB0");
 
 struct sensor_packet {
   int16_t servo_pitch;
@@ -101,7 +101,7 @@ void serial_read_handler(const boost::system::error_code& error,std::size_t byte
 
   //request the next line
   if (ros::ok()) {
-    async_read_until(serial, serial_buffer, "ED", serial_read_handler); 
+    async_read_until(*serial, serial_buffer, "ED", serial_read_handler); 
   } else {
     io.reset();
   }
@@ -113,7 +113,7 @@ void send_serial_message(char field, int value) {
   sprintf(output, "%c%d\n", field, value);
 
   //ROS_INFO("Writing serial: %s", output);
-  boost::asio::write(serial, boost::asio::buffer(output, strlen(output)));
+  boost::asio::write(*serial, boost::asio::buffer(output, strlen(output)));
 }
 
 void write_left_motor(std_msgs::Float32 message) {
@@ -138,6 +138,11 @@ int main(int argc, char **argv)
   ros::NodeHandle node_handle;
   ros::AsyncSpinner spinner(1); //1 thread for async ROS spinning
 
+  std::string port;
+  ros::param::param<std::string>("~port", port, "/dev/ttyUSB0");
+  ROS_INFO("Launching new serial node on %s", port.c_str());
+  serial = new serial_port(io, port);
+
   //queue size of 1
   pub["left_encoder"] = node_handle.advertise<std_msgs::Int16>("left_wheel/encoder", 1);
   pub["right_encoder"] = node_handle.advertise<std_msgs::Int16>("right_wheel/encoder", 1);
@@ -149,15 +154,16 @@ int main(int argc, char **argv)
   sub["pitch"] = node_handle.subscribe("sensors/pitch", 1, write_camera_pitch); 
   sub["yaw"] = node_handle.subscribe("sensors/yaw", 1, write_camera_yaw); 
 
-  serial.set_option( serial_baud );
+  serial->set_option( serial_baud );
 
   ros::Duration(2).sleep(); //wait 3sec for the serial port to init
+  ROS_INFO("Connected");
 
   send_serial_message('M', 1); //enable the motors
 
   ros::Duration(0.1).sleep(); //give motor enable a moment
 
-  async_read_until(serial, serial_buffer, "ED", serial_read_handler);
+  async_read_until(*serial, serial_buffer, "ED", serial_read_handler);
   
   spinner.start();
   io.run();
