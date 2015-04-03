@@ -17,12 +17,10 @@ void rangefinder_setup() {
 }
 
 /**
- * Get and return the rangefinder reading
+ * Get and return the rangefinder reading. "nice" relatively non-blocking version.
  * 
  * @return int Rangefinder reading in CM
  */
- 
-
 int getRange() {
   static int range = 0;
   static boolean requestMode = true;
@@ -49,4 +47,19 @@ int getRange() {
   
   // return the last distance reading we got
   return range;
+}
+
+/**
+ * Get the range right now, don't be nice about it. Blocks until reading.
+ *
+ * @return int cm to target
+ */
+int getRangeNow(){
+  while (I2c.write(LIDARLite_ADDRESS,RegisterMeasure, MeasureValue) ) delay(1); // Write 0x04 to 0x00
+  delay(1); //slight breathing room
+  
+  byte distanceArray[2]; // array to store distance bytes from read function
+  while(I2c.read(LIDARLite_ADDRESS,RegisterHighLowB, 2, distanceArray)) delay(1); // Wait 1 ms to prevent overpolling; // Read 2 Bytes from LIDAR-Lite Address and store in array
+  
+  return (int)((distanceArray[0] << 8) + distanceArray[1]);  // Shift high byte [0] 8 to the left and add low byte [1] to create 16-bit int
 }
