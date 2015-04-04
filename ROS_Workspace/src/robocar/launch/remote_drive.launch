@@ -73,6 +73,16 @@
     </node>
 
     <node pkg="robocar" name="serial" type="serial_node_struct" output="screen"></node>
+
+	  <param  name="robot_description" textfile="$(find robocar)urdf/robocar.urdf" />
+	  <param name="use_gui" value="True"/>
+	  <node  machine="controller" name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+	    <rosparam param="source_list">["/base/joint_state"]</rosparam>
+	  </node>
+	  <node  machine="controller" name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+	  <node  machine="controller" name="rviz" pkg="rviz" type="rviz" args="-d $(find robocar)/robocar.rviz" required="true" />
+
+
   </group>
 
 </launch>

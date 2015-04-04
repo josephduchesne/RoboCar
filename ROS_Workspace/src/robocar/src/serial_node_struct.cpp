@@ -17,10 +17,13 @@ using namespace::boost::asio;  // save tons of typing
 std::tr1::unordered_map<std::string, ros::Publisher> pub;
 std::tr1::unordered_map<std::string, ros::Subscriber> sub;
 
+serial_port *serial;
 serial_port_base::baud_rate serial_baud(115200);
 io_service io;
-serial_port serial(io, "/dev/ttyUSB0");
 
+int mode=1;
+
+#define SWEEP_DEGREES_PER_MILLISECOND 0.285
 #define SENSOR_READINGS 15
 struct sensor_packet {
   int16_t servo_pitch;
@@ -45,19 +48,49 @@ void parseSensorData( struct sensor_packet sensorPacket){
     return;
   }
 
-  laser_scan.range_min = 0.1f; //http://kb.pulsedlight3d.com/support/solutions/articles/5000548616-lidar-lite-specifications
-  laser_scan.range_max = 40.0f;
-  laser_scan.angle_min = -0.001;
-  laser_scan.angle_max = 0.001;
-  laser_scan.angle_increment = 0.002;
-  laser_scan.scan_time = 0.0;
-  laser_scan.ranges.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
-  laser_scan.ranges.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
-  laser_scan.intensities.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
-  laser_scan.intensities.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
-  laser_scan.header.frame_id = "rangefinder";
-  laser_scan.header.stamp = ros::Time::now();
-  pub["laser"].publish(laser_scan);
+  if (sensorPacket.rangefinder_distance != 0) {
+    laser_scan.range_min = 0.1f; //http://kb.pulsedlight3d.com/support/solutions/articles/5000548616-lidar-lite-specifications
+    laser_scan.range_max = 40.0f;
+    laser_scan.angle_min = -0.001;
+    laser_scan.angle_max = 0.001;
+    laser_scan.angle_increment = 0.002;
+    laser_scan.scan_time = 0.0;
+    laser_scan.header.frame_id = "rangefinder";
+    laser_scan.header.stamp = ros::Time::now();
+
+    //sweep mode packet handling
+    if (sensorPacket.rangefinder_distance<0) {
+      laser_scan.header.frame_id = "laser_scanner"; 
+      int scan_count = -sensorPacket.rangefinder_distance;
+      float scan_min = (float)sensorPacket.sweep[0]/100.0f;
+      float scan_max = (float)sensorPacket.sweep[(scan_count-1)*2]/100.0f;
+      laser_scan.angle_increment = (scan_max-scan_min)/(float)scan_count/180*3.1415;
+      laser_scan.time_increment = abs(laser_scan.angle_increment)/SWEEP_DEGREES_PER_MILLISECOND;
+      laser_scan.scan_time = 0.8f;
+      //subtract 1/2 angle increment since the reading takes place somewhere between time slices
+      laser_scan.angle_min = scan_min/180.0*3.1415+laser_scan.angle_increment/2;  //deg to rad
+      laser_scan.angle_max = scan_max/180.0*3.1415+laser_scan.angle_increment/2;
+
+      sensorPacket.servo_yaw = laser_scan.angle_max; //max scan angle is the current servo position
+
+      for(int i=0; i<scan_count; i++) {
+        //printf("%4.1f, ",(float)sensorPacket.sweep[i*2+1]/100.0f);
+        laser_scan.ranges.push_back((float)sensorPacket.sweep[i*2+1]/100.0f); //convert from cm to m
+        laser_scan.intensities.push_back((float)sensorPacket.sweep[i*2+1]/100.0f); //convert from cm to m
+      }
+      //printf("\n");
+      
+      //printf("Found %d readings: %4.1f to %4.1f deg %4.1f (%4.1f)\n", scan_count, scan_min, scan_max, laser_scan.angle_increment, laser_scan.time_increment); 
+
+    } else { //normal individual rangefinding
+      laser_scan.ranges.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
+      laser_scan.ranges.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
+      laser_scan.intensities.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
+      laser_scan.intensities.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
+    }
+
+    pub["laser"].publish(laser_scan);
+  }
 
   //range.data = (float)sensorPacket.rangefinder_distance/100.0f; //convert from cm to m
   //pub["range"].publish(range);
@@ -86,9 +119,9 @@ void serial_read_handler(const boost::system::error_code& error,std::size_t byte
     const char* serial_bytes = boost::asio::buffer_cast<const char*>(serial_buffer.data());
     serial_buffer.consume(bytes_transferred);
 
-    //12 byte packet + null byte that Arduino seems to like tacking on
+    //72 byte packet + null byte that Arduino seems to like tacking on
     //also sanity checking for the packet ending
-    if (bytes_transferred == 12 || bytes_transferred == 13) { 
+    if (bytes_transferred == 72 || bytes_transferred == 73) { 
       struct sensor_packet sensorPacket;
       memcpy(&sensorPacket, serial_bytes, sizeof(sensorPacket));
       parseSensorData(sensorPacket);
@@ -103,7 +136,7 @@ void serial_read_handler(const boost::system::error_code& error,std::size_t byte
 
   //request the next line
   if (ros::ok()) {
-    async_read_until(serial, serial_buffer, "ED", serial_read_handler); 
+    async_read_until(*serial, serial_buffer, "ED", serial_read_handler); 
   } else {
     io.reset();
   }
@@ -115,7 +148,7 @@ void send_serial_message(char field, int value) {
   sprintf(output, "%c%d\n", field, value);
 
   //ROS_INFO("Writing serial: %s", output);
-  boost::asio::write(serial, boost::asio::buffer(output, strlen(output)));
+  boost::asio::write(*serial, boost::asio::buffer(output, strlen(output)));
 }
 
 void write_left_motor(std_msgs::Float32 message) {
@@ -135,6 +168,7 @@ void write_camera_yaw(std_msgs::Int16 message) {
 }
 
 void write_mode(std_msgs::Int16 message) {
+  mode = message.data; //update the global
   send_serial_message('M', message.data); //set mode
 }
 
@@ -143,6 +177,11 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "serial_node");
   ros::NodeHandle node_handle;
   ros::AsyncSpinner spinner(1); //1 thread for async ROS spinning
+
+  std::string port;
+  ros::param::param<std::string>("~port", port, "/dev/ttyUSB0");
+  ROS_INFO("Launching new serial node on %s", port.c_str());
+  serial = new serial_port(io, port);
 
   //queue size of 1
   pub["left_encoder"] = node_handle.advertise<std_msgs::Int16>("left_wheel/encoder", 1);
@@ -156,15 +195,16 @@ int main(int argc, char **argv)
   sub["yaw"] = node_handle.subscribe("sensors/yaw", 1, write_camera_yaw); 
   sub["mode"] = node_handle.subscribe("sensors/mode", 1, write_mode); 
 
-  serial.set_option( serial_baud );
+  serial->set_option( serial_baud );
 
   ros::Duration(2).sleep(); //wait 3sec for the serial port to init
+  ROS_INFO("Connected");
 
   send_serial_message('M', 1); //enable the motors
 
   ros::Duration(0.1).sleep(); //give motor enable a moment
 
-  async_read_until(serial, serial_buffer, "ED", serial_read_handler);
+  async_read_until(*serial, serial_buffer, "ED", serial_read_handler);
   
   spinner.start();
   io.run();
