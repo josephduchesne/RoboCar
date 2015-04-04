@@ -21,6 +21,9 @@ serial_port *serial;
 serial_port_base::baud_rate serial_baud(115200);
 io_service io;
 
+int mode=1;
+
+#define SWEEP_DEGREES_PER_MILLISECOND 0.285
 #define SENSOR_READINGS 15
 struct sensor_packet {
   int16_t servo_pitch;
@@ -45,19 +48,49 @@ void parseSensorData( struct sensor_packet sensorPacket){
     return;
   }
 
-  laser_scan.range_min = 0.1f; //http://kb.pulsedlight3d.com/support/solutions/articles/5000548616-lidar-lite-specifications
-  laser_scan.range_max = 40.0f;
-  laser_scan.angle_min = -0.001;
-  laser_scan.angle_max = 0.001;
-  laser_scan.angle_increment = 0.002;
-  laser_scan.scan_time = 0.0;
-  laser_scan.ranges.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
-  laser_scan.ranges.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
-  laser_scan.intensities.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
-  laser_scan.intensities.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
-  laser_scan.header.frame_id = "rangefinder";
-  laser_scan.header.stamp = ros::Time::now();
-  pub["laser"].publish(laser_scan);
+  if (sensorPacket.rangefinder_distance != 0) {
+    laser_scan.range_min = 0.1f; //http://kb.pulsedlight3d.com/support/solutions/articles/5000548616-lidar-lite-specifications
+    laser_scan.range_max = 40.0f;
+    laser_scan.angle_min = -0.001;
+    laser_scan.angle_max = 0.001;
+    laser_scan.angle_increment = 0.002;
+    laser_scan.scan_time = 0.0;
+    laser_scan.header.frame_id = "rangefinder";
+    laser_scan.header.stamp = ros::Time::now();
+
+    //sweep mode packet handling
+    if (sensorPacket.rangefinder_distance<0) {
+      laser_scan.header.frame_id = "laser_scanner"; 
+      int scan_count = -sensorPacket.rangefinder_distance;
+      float scan_min = (float)sensorPacket.sweep[0]/100.0f;
+      float scan_max = (float)sensorPacket.sweep[(scan_count-1)*2]/100.0f;
+      laser_scan.angle_increment = (scan_max-scan_min)/(float)scan_count/180*3.1415;
+      laser_scan.time_increment = abs(laser_scan.angle_increment)/SWEEP_DEGREES_PER_MILLISECOND;
+      laser_scan.scan_time = 0.8f;
+      //subtract 1/2 angle increment since the reading takes place somewhere between time slices
+      laser_scan.angle_min = scan_min/180.0*3.1415+laser_scan.angle_increment/2;  //deg to rad
+      laser_scan.angle_max = scan_max/180.0*3.1415+laser_scan.angle_increment/2;
+
+      sensorPacket.servo_yaw = laser_scan.angle_max; //max scan angle is the current servo position
+
+      for(int i=0; i<scan_count; i++) {
+        //printf("%4.1f, ",(float)sensorPacket.sweep[i*2+1]/100.0f);
+        laser_scan.ranges.push_back((float)sensorPacket.sweep[i*2+1]/100.0f); //convert from cm to m
+        laser_scan.intensities.push_back((float)sensorPacket.sweep[i*2+1]/100.0f); //convert from cm to m
+      }
+      //printf("\n");
+      
+      //printf("Found %d readings: %4.1f to %4.1f deg %4.1f (%4.1f)\n", scan_count, scan_min, scan_max, laser_scan.angle_increment, laser_scan.time_increment); 
+
+    } else { //normal individual rangefinding
+      laser_scan.ranges.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
+      laser_scan.ranges.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
+      laser_scan.intensities.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
+      laser_scan.intensities.push_back((float)sensorPacket.rangefinder_distance/100.0f); //convert from cm to m
+    }
+
+    pub["laser"].publish(laser_scan);
+  }
 
   //range.data = (float)sensorPacket.rangefinder_distance/100.0f; //convert from cm to m
   //pub["range"].publish(range);
@@ -135,6 +168,7 @@ void write_camera_yaw(std_msgs::Int16 message) {
 }
 
 void write_mode(std_msgs::Int16 message) {
+  mode = message.data; //update the global
   send_serial_message('M', message.data); //set mode
 }
 
