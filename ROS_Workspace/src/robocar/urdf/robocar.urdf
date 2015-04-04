@@ -94,11 +94,20 @@
     </visual>
   </link>
 
+  <link name="laser_scanner">
+  </link>
+
+  <joint name="laser_scanner_fixed" type="fixed">
+    <parent link="base_link"/>
+    <child link="laser_scanner"/>
+    <origin xyz="0.0925 0 0.121" rpy="3.141592 0 0"/> 
+  </joint>
+
   <joint name="servo_yaw" type="revolute">
     <parent link="base_link"/>
     <child link="sensor_arm"/>
     <axis xyz="0 0 -1" />
-    <limit lower="-0.785" upper="0.785" effort="1" velocity="1" />
+    <limit lower="-1.57" upper="1.57" effort="1" velocity="1" />
     <origin xyz="0.0925 0 0.08"/> 
   </joint>
 
