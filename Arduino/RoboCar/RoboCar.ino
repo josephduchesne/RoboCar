@@ -36,11 +36,12 @@
 
 //variables for controlling sensor data frequency
 unsigned long lastOutput = 0;  //miliseconds since arduino start
-const int timeBetweenOutputs = 20; //ms between outputting data
+const int timeBetweenOutputs = 100; //ms between outputting data
 
 int range = 0;
 int sensorOffset = 0;
 boolean sensorSweep = false;
+boolean flushData = false;
 #define SENSOR_READINGS 15
 
 // output mode
@@ -96,9 +97,9 @@ void loop()
   
   if (sensorSweep) {
     processSensorSweep();
+  } else {
+    range = getRange();
   }
-  
-  range = getRange();
 
   outputSensorData();
 }
@@ -161,6 +162,14 @@ void serialEvent(){
   }
 }
 
+/**
+ * Tell the communication process to flush a reading
+ *
+ * @return  void
+ */
+void setFlushData(){
+  flushData = true; 
+}
 
 /**
  * Output sensor data periodically via serial port
@@ -169,10 +178,12 @@ void serialEvent(){
  */
 void outputSensorData(){
   //output sensor value every timeBetweenOutputs
-  if (millis()-lastOutput < timeBetweenOutputs) {
+  //or if we're full on sensor readings
+  if (millis()-lastOutput < timeBetweenOutputs && sensorOffset<SENSOR_READINGS && !flushData) {
     return;
   }
   lastOutput = millis();
+  flushData = false;
   
   #ifdef OUTPUT_ASCII
     //output estimated servo positions
@@ -199,7 +210,7 @@ void outputSensorData(){
     sensorPacket.left_wheel_encoder = getWheelCounter(0);
     sensorPacket.right_wheel_encoder = getWheelCounter(1);
     if (sensorSweep) {
-      sensorPacket.rangefinder_distance = -1;
+      sensorPacket.rangefinder_distance = -sensorOffset;
     } else {
       sensorPacket.rangefinder_distance = range;
     }
@@ -219,15 +230,15 @@ void outputSensorData(){
 
 
 /**
- * Write a sensor sweep reading to the sensor packet's circular data buffer
+ * Write a sensor sweep reading to the sensor packet's data buffer
  *
  * @return void
  */
 void setSensorData(float angle, int value){
-  if( sensorSweep) {
+  if( sensorSweep && sensorOffset<SENSOR_READINGS) {
     int angle_int = (int)(angle*100.0f);
-    sensorPacket.sweep[sensorOffset] = angle_int;
-    sensorPacket.sweep[sensorOffset+1] = value;
+    sensorPacket.sweep[sensorOffset*2] = angle_int;
+    sensorPacket.sweep[sensorOffset*2+1] = value;
     sensorOffset++;
   }
 }

@@ -17,7 +17,7 @@
 
 //sweep constants
 #define SWEEP_DEGREES_PER_MILLISECOND 0.285
-#define SWEEP_DEGREE_OFFSET 78.326
+#define SWEEP_DEGREE_OFFSET -78.326
 #define SWEEP_PRE_BLANK 50000
 #define SWEEP_POST_BLANK 460000
 #define SWEEP_END 800000
@@ -174,6 +174,7 @@ void processSensorSweep(){
     case 3: //RECORD while moving at a constant angular velocity
       recordSensorSweepReading();
       if (micros() - sweep_time >= SWEEP_POST_BLANK) {
+          setFlushData();
           sweep_stage = 1;
       }
       break;
