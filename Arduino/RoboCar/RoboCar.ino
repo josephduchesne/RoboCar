@@ -7,7 +7,7 @@
  */
 
 /* --- incoming serial:  --- */
-/*
+/* 
  in an any (but normally this) order:
  'L-100\n' to 'L100\n' - left speed
  'R-100\n' to 'R100\n' - right speed
@@ -18,7 +18,7 @@
 */
 
 /* --- outgoing serial: --- */
-/*
+/* (only when compiled in OUTPUT_ASCII mode)
  in an any (but normally this) order:
  'L-32000\n' to 'L32000\n' the left wheel encoder ticks
  'R-32000\n' to 'R32000\n' the right wheel encoder ticks
